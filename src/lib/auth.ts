@@ -52,3 +52,60 @@ export async function createSessionFromUrl(url: string) {
         return data.session
     }
 }
+function getRedirectSetupMessage(redirectUri: string) {
+    return [
+        'Supabase rejected the app redirect URL and sent you to localhost instead.',
+        '',
+        'Open Supabase Dashboard → Authentication → URL Configuration and add:',
+        `  ${redirectUri}`,
+        '  exp://**',
+        '  leetcodemobile://**',
+        '',
+        'Then try signing in again.',
+    ].join('\n')
+}
+export async function SignInWithOAuth(provider: Provider) {
+    const redirectTo = getAuthRedirectUri();
+
+    console.log('redirectTo', redirectTo);
+
+    if (!redirectTo) {
+        throw new Error('Could not determine OAuth redirect URI for this platform.')
+    }
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+            redirectTo,
+            skipBrowserRedirect: true
+        }
+    });
+
+    console.log('data', data);
+    console.log('error', error);
+
+    if (error) throw error
+    if (!data.url) throw new Error('No OAuth URL returned')
+
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo, {
+        showInRecents: true
+    });
+
+    console.log('result', result);
+
+    if (result.type === 'success') {
+        return createSessionFromUrl(result.url)
+    }
+
+    if (result.type === 'cancel' || result.type === 'dismiss') {
+        return
+    }
+
+    console.log('getRedirectSetupMessage', getRedirectSetupMessage(redirectTo));
+    throw new Error(getRedirectSetupMessage(redirectTo))
+}
+
+export async function signOut() {
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
+}
