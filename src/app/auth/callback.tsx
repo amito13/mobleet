@@ -2,7 +2,6 @@ import { useAuthStore } from "@/state/auth-store";
 import * as Linking from "expo-linking";
 import { useEffect,useState } from "react";
 import { useRouter } from "expo-router";
-import { useAuth } from "@/hooks/use-auth";
 import { ActivityIndicator, View, Text } from "react-native";
 
 export default function AuthCallback() {
@@ -12,11 +11,12 @@ export default function AuthCallback() {
     const [error ,setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (url) return
+        if (!url) return
+        const callbackUrl = url;
 
         async function finishAuth(){
             try{
-                await handleDeepLink(url!);
+                await handleDeepLink(callbackUrl);
                 router.replace("/");
 
             }

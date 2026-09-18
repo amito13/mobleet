@@ -4,6 +4,29 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 
 ## Get started
 
+### Google / GitHub sign-in setup
+
+Use a development build for native OAuth testing; Expo Go does not support
+the app's custom `mobleet` scheme.
+
+1. In Supabase Dashboard → Authentication → URL Configuration → Redirect URLs,
+   add `mobleet://auth/callback` and save. A browser landing on `localhost` after
+   sign-in usually means the requested redirect was not allowlisted and the
+   project's default Site URL was used. The app logs its redirect URL in development.
+2. In the Google OAuth web client's authorized redirect URIs, use the Supabase
+   callback URL: `https://chbtdplfrkdcsokmqcme.supabase.co/auth/v1/callback`.
+   Enable Google and configure its client ID and secret in Supabase's provider settings.
+3. Build Android locally with `npx expo run:android`, or build with
+   `npx eas-cli build --profile development --platform android` and install the APK.
+4. Run `npx expo start --dev-client`, open the installed Mobleet app, and sign in.
+   The native redirect should be `mobleet://auth/callback`.
+
+For web testing, separately allowlist the exact web callback URL logged by the app.
+Rebuild the native app whenever its URL scheme changes.
+
+References: [Expo authentication](https://docs.expo.dev/guides/authentication/),
+[Supabase redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls).
+
 1. Install dependencies
 
    ```bash

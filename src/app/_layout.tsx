@@ -59,7 +59,7 @@ function RootNavigator() {
         animation: 'fade',
       }}
     >
-      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="index" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="auth/callback" />
     </Stack>
