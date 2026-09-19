@@ -21,7 +21,7 @@
       "package": "com.amit1312.Mobleet"
     },
     "web": {
-      "output": "static",
+      "output": "server",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
