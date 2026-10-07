@@ -29,6 +29,8 @@ export type ProblemTestCase = { input: string; output: string }
 type CodeBoxResponse = {
     stdout: string | null
     stderr: string | null
+    compile_output?: string | null
+    message?: string | null
     status: { id: number; description: string }
     time: string | null
     memory: number | null
@@ -46,13 +48,18 @@ export async function executeOnCodeBox(params: {
 }) {
     const token = process.env.CODEBOX_API_TOKEN;
 
-    if (!token) throw new Error('CODEBOX_TOKEN is not configured on the server.')
+    if (!token) throw new Error('CODEBOX_API_TOKEN is not configured on the server.')
 
-    const upstream = await fetch('https://localhost:3000/api/execute', {
+    const executeUrl = new URL(
+        process.env.CODEBOX_EXECUTE_URL?.trim() || 'http://localhost:3000/submissions'
+    );
+    executeUrl.searchParams.set('wait', 'true');
+
+    const upstream = await fetch(executeUrl, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json',
-            'x-api-key': token,
+            'X-Auth-Token': token,
         },
         body: JSON.stringify({
             language_id: params.languageId,
@@ -91,7 +98,7 @@ export function toCaseResult(
       input: testCase.input,
       expectedOutput,
       actualOutput,
-      stderr: normalise(data.stderr),
+      stderr: [data.stderr, data.compile_output, data.message].map(normalise).filter(Boolean).join('\n'),
       status: data.status,
       outcome,
       timeSec: data.time ? Number(data.time) : null,

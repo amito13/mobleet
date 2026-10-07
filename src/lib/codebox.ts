@@ -44,9 +44,24 @@ export async function submitSolution(params: {
     body: JSON.stringify(params),
   })
 
-  const payload = await response.json()
+  const text = await response.text()
+  let payload: unknown
+  try {
+    payload = JSON.parse(text)
+  } catch {
+    if (response.status === 401) {
+      throw new Error('Your session was rejected. Sign out and sign in again, then retry.')
+    }
+    throw new Error(
+      `Submit failed (${response.status}): ${text.trim().slice(0, 200) || 'Empty server response'}`,
+    )
+  }
   if (!response.ok) {
-    throw new Error(payload.error ?? payload.message ?? `Submit failed (${response.status})`)
+    const error = payload && typeof payload === 'object'
+      ? (payload as { error?: unknown; message?: unknown })
+      : null
+    const message = error?.error ?? error?.message
+    throw new Error(typeof message === 'string' ? message : `Submit failed (${response.status})`)
   }
   return payload as SubmitResponse
 }

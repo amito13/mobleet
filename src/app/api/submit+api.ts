@@ -14,7 +14,9 @@ function overallStatus(results: CaseResult[]) {
 export async function POST(request: Request) {
     const user = await getUserFromRequest(request);
 
-    if (!user) throw new StatusError(401, 'Unauthorized');
+    if (!user) {
+      return Response.json({ error: 'Your session was rejected. Sign out and sign in again, then retry.' }, { status: 401 });
+    }
 
     const { problemId, language, sourceCode } = await request.json();
 
