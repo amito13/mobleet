@@ -1,4 +1,5 @@
 import Constants from 'expo-constants'
+import { Platform } from 'react-native'
 
 import type { CaseResult } from '@/lib/judge'
 import type { LanguageId } from '@/lib/problems'
@@ -16,13 +17,22 @@ export type SubmitResponse = {
 }
 
 export function resolveApiBaseUrl() {
-  if (process.env.EXPO_PUBLIC_API_BASE_URL) return process.env.EXPO_PUBLIC_API_BASE_URL
+  const configuredUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim()
+    || Constants.expoConfig?.extra?.router?.origin
+  if (configuredUrl) return configuredUrl.replace(/\/+$/, '')
+
+  // Web can use its own origin; installed native apps need a hosted API.
+  if (Platform.OS === 'web') return ''
+  if (!__DEV__) {
+    throw new Error('The submission server is not configured for this build. Set EXPO_PUBLIC_API_BASE_URL to the hosted API URL and rebuild the app.')
+  }
 
   const hostUri =
     Constants.expoConfig?.hostUri ??
     (Constants as { manifest?: { hostUri?: string } }).manifest?.hostUri
 
-  return hostUri ? `http://${hostUri.split('/')[0]}` : 'http://localhost:8081'
+  if (!hostUri) throw new Error('Cannot find the development server. Set EXPO_PUBLIC_API_BASE_URL to a server reachable from this device.')
+  return `http://${hostUri.split('/')[0]}`
 }
 
 export async function submitSolution(params: {
@@ -35,14 +45,20 @@ export async function submitSolution(params: {
   } = await supabase.auth.getSession()
   if (!session?.access_token) throw new Error('You must be signed in to submit.')
 
-  const response = await fetch(`${resolveApiBaseUrl()}/api/submit`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-    },
-    body: JSON.stringify(params),
-  })
+  const apiBaseUrl = resolveApiBaseUrl()
+  let response: Response
+  try {
+    response = await fetch(`${apiBaseUrl}/api/submit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify(params),
+    })
+  } catch {
+    throw new Error('Could not reach the submission server. Check your connection and try again.')
+  }
 
   const text = await response.text()
   let payload: unknown
