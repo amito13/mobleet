@@ -1,3 +1,4 @@
+import { Badge, CodeButton, Comment, Panel, StatusBlock } from '@/components/code-ui'
 import { useAuth } from '@/hooks/use-auth'
 import { useScreenInsets } from '@/hooks/use-screen-insets'
 import {
@@ -10,8 +11,8 @@ import {
   type Problem,
   type SubmissionListItem,
 } from '@/lib/problems'
-import { colors } from '@/lib/theme'
-import { Feather, Ionicons } from '@expo/vector-icons'
+import { colors, fonts, radius } from '@/lib/theme'
+import { Feather } from '@expo/vector-icons'
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import {
@@ -28,9 +29,9 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 type Tab = 'description' | 'solutions' | 'submissions'
 
 const TABS: { id: Tab; label: string; icon: keyof typeof Feather.glyphMap }[] = [
-  { id: 'description', label: 'Description', icon: 'file-text' },
-  { id: 'solutions', label: 'Solutions', icon: 'lock' },
-  { id: 'submissions', label: 'Submissions', icon: 'code' },
+  { id: 'description', label: 'README.md', icon: 'file-text' },
+  { id: 'solutions', label: 'solutions', icon: 'lock' },
+  { id: 'submissions', label: 'runs.log', icon: 'terminal' },
 ]
 
 export default function ProblemDetailsScreen() {
@@ -95,17 +96,17 @@ export default function ProblemDetailsScreen() {
   if (error || !problem) {
     return (
       <SafeAreaView style={styles.centered} edges={['top', 'bottom']}>
-        <Feather name="alert-circle" size={32} color={colors.mutedDark} />
-        <Text style={styles.notFoundTitle}>Problem not found</Text>
-        <Text style={styles.notFoundSubtitle}>
-          {error ?? `The problem with id "${id}" doesn't exist yet.`}
-        </Text>
-        <Pressable
-          onPress={() => router.replace('/problems' as never)}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.backButtonLabel}>Back to problems</Text>
-        </Pressable>
+        <StatusBlock
+          icon="alert-triangle"
+          title="404: problem not found"
+          subtitle={error ?? `The problem with id "${id}" doesn't exist yet.`}
+          action={
+            <CodeButton
+              label="Back to problems"
+              onPress={() => router.replace('/problems' as never)}
+            />
+          }
+        />
       </SafeAreaView>
     )
   }
@@ -129,84 +130,78 @@ export default function ProblemDetailsScreen() {
                 pressed && styles.pressed,
               ]}
             >
-              <Feather name="arrow-left" size={18} color={colors.foreground} />
+              <Feather name="arrow-left" size={16} color={colors.foreground} />
             </Pressable>
-            <Text style={styles.navTitle}>Problem Details</Text>
-          </View>
-
-          <View style={styles.titleRow}>
-            <Text style={styles.problemTitle}>{problem.title}</Text>
-            <View style={[styles.difficultyBadge, { backgroundColor: tint.bg }]}>
-              <Text style={[styles.difficultyText, { color: tint.fg }]}>
-                {problem.difficulty}
+            <Text style={styles.breadcrumb} numberOfLines={1}>
+              problems <Text style={styles.breadcrumbSep}>/</Text>{' '}
+              <Text style={styles.breadcrumbActive}>
+                {problem.title.toLowerCase().replace(/\s+/g, '-')}
               </Text>
-            </View>
-          </View>
-
-          <View style={styles.metaRow}>
-            <View style={styles.metaLeft}>
-              <Feather name="tag" size={13} color={colors.lime} />
-              <Text style={styles.metaText}>
-                {problem.tags.slice(0, 2).join(' · ') || 'General'}
-              </Text>
-            </View>
+            </Text>
             <Pressable
               onPress={() =>
                 Alert.alert('Report bug', 'Thanks! Bug reporting is coming soon.')
               }
-              hitSlop={6}
+              hitSlop={8}
               style={({ pressed }) => [
-                styles.reportButton,
+                styles.iconButton,
                 pressed && styles.pressed,
               ]}
             >
-              <Ionicons name="bug-outline" size={12} color={colors.muted} />
-              <Text style={styles.reportText}>Report bug</Text>
+              <Feather name="flag" size={14} color={colors.muted} />
             </Pressable>
           </View>
 
-          <View style={styles.tabs}>
+          <Text style={styles.problemTitle}>{problem.title}</Text>
+          <View style={styles.metaRow}>
+            <Badge label={problem.difficulty} fg={tint.fg} bg={tint.bg} />
+            <Text style={styles.metaText} numberOfLines={1}>
+              {problem.tags.slice(0, 3).map((tag) => `#${tag}`).join('  ') ||
+                '#general'}
+            </Text>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.tabs}
+            contentContainerStyle={styles.tabsContent}
+          >
             {TABS.map((tab) => {
               const active = activeTab === tab.id
               return (
                 <Pressable
                   key={tab.id}
                   onPress={() => setActiveTab(tab.id)}
-                  style={({ pressed }) => [
-                    styles.tabItem,
-                    pressed && styles.pressed,
-                  ]}
+                  style={[styles.tabItem, active && styles.tabItemActive]}
                 >
-                  <View style={styles.tabLabelRow}>
-                    <Feather
-                      name={tab.icon}
-                      size={13}
-                      color={active ? colors.peach : colors.muted}
-                    />
-                    <Text
-                      style={[
-                        styles.tabLabel,
-                        { color: active ? colors.peach : colors.muted },
-                      ]}
-                    >
-                      {tab.label}
-                    </Text>
-                  </View>
-                  {active ? <View style={styles.tabIndicator} /> : null}
+                  <Feather
+                    name={tab.icon}
+                    size={12}
+                    color={active ? colors.lime : colors.mutedDark}
+                  />
+                  <Text
+                    style={[
+                      styles.tabLabel,
+                      { color: active ? colors.foreground : colors.muted },
+                    ]}
+                  >
+                    {tab.label}
+                  </Text>
                 </Pressable>
               )
             })}
-          </View>
+          </ScrollView>
 
           <View style={styles.tabBody}>
             {activeTab === 'description' ? (
               <DescriptionTab problem={problem} />
             ) : null}
             {activeTab === 'solutions' ? (
-              <LockedTab
-                title="Solutions are locked"
-                subtitle="Submit a passing answer to unlock community solutions."
+              <StatusBlock
                 icon="lock"
+                title="solutions are locked"
+                subtitle="Submit a passing answer to unlock community solutions."
               />
             ) : null}
             {activeTab === 'submissions' ? (
@@ -218,18 +213,13 @@ export default function ProblemDetailsScreen() {
           </View>
 
           <View style={styles.footer}>
-            <Pressable
+            <CodeButton
+              label="Open in editor"
               onPress={() =>
                 router.push(`/problems/${problem.id}/solve` as never)
               }
-              style={({ pressed }) => [
-                styles.submitButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.submitLabel}>Solve</Text>
-              <Feather name="play" size={16} color="#1f1208" />
-            </Pressable>
+              icon={(color) => <Feather name="code" size={16} color={color} />}
+            />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -251,11 +241,11 @@ function DescriptionTab({ problem }: { problem: Problem }) {
 
       {constraints.length > 0 ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Constraints</Text>
+          <Comment style={styles.sectionLabel}>constraints</Comment>
           <View style={styles.constraintsList}>
             {constraints.map((constraint, index) => (
               <View key={index} style={styles.constraintRow}>
-                <Text style={styles.bullet}>•</Text>
+                <Text style={styles.bullet}>-</Text>
                 <Text style={styles.constraintText}>{constraint}</Text>
               </View>
             ))}
@@ -265,20 +255,9 @@ function DescriptionTab({ problem }: { problem: Problem }) {
 
       {problem.hints ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Hints</Text>
-          <Text style={styles.bodyText}>{problem.hints}</Text>
-        </View>
-      ) : null}
-
-      {problem.tags.length > 0 ? (
-        <View style={styles.section}>
-          <Text style={styles.tagsLabel}>TAGS</Text>
-          <View style={styles.tagsRow}>
-            {problem.tags.map((tag) => (
-              <View key={tag} style={styles.tagChip}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
-            ))}
+          <Comment style={styles.sectionLabel}>hint</Comment>
+          <View style={styles.hintBox}>
+            <Text style={styles.bodyText}>{problem.hints}</Text>
           </View>
         </View>
       ) : null}
@@ -294,22 +273,24 @@ function ExampleBlock({
   index: number
 }) {
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Example {index + 1}</Text>
-      <View style={styles.codeBlock}>
-        <Text style={styles.codeLine}>
-          <Text style={styles.codeMuted}>Input: </Text>
-          {example.input}
-        </Text>
-        <Text style={[styles.codeLine, { marginTop: 4 }]}>
-          <Text style={styles.codeMuted}>Output: </Text>
-          {example.output}
-        </Text>
-        {example.explanation ? (
-          <Text style={styles.explanation}>{example.explanation}</Text>
-        ) : null}
-      </View>
-    </View>
+    <Panel
+      title={`example_${index + 1}.txt`}
+      icon="file"
+      style={styles.section}
+      bodyStyle={styles.exampleBody}
+    >
+      <Text style={styles.codeLine}>
+        <Text style={styles.codeKey}>input  </Text>
+        {example.input}
+      </Text>
+      <Text style={[styles.codeLine, { marginTop: 4 }]}>
+        <Text style={styles.codeKey}>output </Text>
+        {example.output}
+      </Text>
+      {example.explanation ? (
+        <Comment style={styles.explanation}>{example.explanation}</Comment>
+      ) : null}
+    </Panel>
   )
 }
 
@@ -326,7 +307,7 @@ function RichDescription({ text }: { text: string }) {
             <View key={idx} style={{ gap: 6 }}>
               {lines.map((line, lineIdx) => (
                 <View key={lineIdx} style={styles.constraintRow}>
-                  <Text style={styles.bullet}>•</Text>
+                  <Text style={styles.bullet}>-</Text>
                   <BoldText text={line.slice(2)} style={styles.bodyText} />
                 </View>
               ))}
@@ -364,26 +345,6 @@ function BoldText({
   )
 }
 
-function LockedTab({
-  title,
-  subtitle,
-  icon,
-}: {
-  title: string
-  subtitle: string
-  icon: keyof typeof Feather.glyphMap
-}) {
-  return (
-    <View style={styles.lockedCard}>
-      <View style={styles.lockedIcon}>
-        <Feather name={icon} size={20} color={colors.lime} />
-      </View>
-      <Text style={styles.lockedTitle}>{title}</Text>
-      <Text style={styles.lockedSubtitle}>{subtitle}</Text>
-    </View>
-  )
-}
-
 function statusTint(status: string) {
   if (status.toLowerCase().includes('accepted')) {
     return { fg: colors.success, bg: colors.successBg }
@@ -411,26 +372,28 @@ function SubmissionsTab({
 
   if (submissions.length === 0) {
     return (
-      <LockedTab
-        title="No submissions yet"
-        subtitle="Once you run your first attempt it will appear here."
-        icon="inbox"
+      <StatusBlock
+        icon="terminal"
+        title="runs.log is empty"
+        subtitle="Once you submit your first attempt it will appear here."
       />
     )
   }
 
   return (
-    <View style={styles.submissionsList}>
-      {submissions.map((submission) => {
+    <Panel title={`${submissions.length} runs`} icon="terminal">
+      {submissions.map((submission, index) => {
         const tint = statusTint(submission.status)
         return (
-          <View key={submission.id} style={styles.submissionCard}>
+          <View
+            key={submission.id}
+            style={[
+              styles.submissionRow,
+              index < submissions.length - 1 && styles.submissionDivider,
+            ]}
+          >
             <View style={styles.submissionTop}>
-              <View style={[styles.statusBadge, { backgroundColor: tint.bg }]}>
-                <Text style={[styles.statusBadgeText, { color: tint.fg }]}>
-                  {submission.status.toUpperCase()}
-                </Text>
-              </View>
+              <Badge label={submission.status} fg={tint.fg} bg={tint.bg} />
               <Text style={styles.submissionDate}>
                 {new Date(submission.created_at).toLocaleString(undefined, {
                   month: 'short',
@@ -440,33 +403,15 @@ function SubmissionsTab({
                 })}
               </Text>
             </View>
-
-            <View style={styles.submissionMeta}>
-              <View style={styles.submissionMetaItem}>
-                <Feather name="code" size={12} color={colors.muted} />
-                <Text style={styles.submissionMetaText}>
-                  {submission.language}
-                </Text>
-              </View>
-              {submission.time ? (
-                <View style={styles.submissionMetaItem}>
-                  <Feather name="clock" size={12} color={colors.muted} />
-                  <Text style={styles.submissionMetaText}>{submission.time}</Text>
-                </View>
-              ) : null}
-              {submission.memory ? (
-                <View style={styles.submissionMetaItem}>
-                  <Feather name="cpu" size={12} color={colors.muted} />
-                  <Text style={styles.submissionMetaText}>
-                    {submission.memory}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
+            <Text style={styles.submissionMeta}>
+              <Text style={{ color: colors.keyword }}>{submission.language}</Text>
+              {submission.time ? `  ·  ${submission.time}` : ''}
+              {submission.memory ? `  ·  ${submission.memory}` : ''}
+            </Text>
           </View>
         )
       })}
-    </View>
+    </Panel>
   )
 }
 
@@ -480,143 +425,92 @@ const styles = StyleSheet.create({
   },
   centered: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    backgroundColor: colors.background,
-  },
-  notFoundTitle: {
-    color: colors.foreground,
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 16,
-  },
-  notFoundSubtitle: {
-    color: colors.muted,
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  backButton: {
-    marginTop: 24,
-    borderRadius: 16,
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: colors.lime,
-  },
-  backButtonLabel: {
-    color: colors.background,
-    fontWeight: '700',
+    backgroundColor: colors.background,
   },
   scroll: {
     flexGrow: 1,
   },
   navRow: {
     height: 48,
-    marginBottom: 4,
+    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.cardBorder,
   },
-  navTitle: {
-    color: colors.foreground,
-    fontSize: 18,
-    fontWeight: '700',
-    marginLeft: 12,
+  pressed: {
+    opacity: 0.7,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+  breadcrumb: {
+    flex: 1,
+    color: colors.muted,
+    fontFamily: fonts.mono,
+    fontSize: 12,
+  },
+  breadcrumbSep: {
+    color: colors.mutedDark,
+  },
+  breadcrumbActive: {
+    color: colors.foreground,
   },
   problemTitle: {
-    flex: 1,
-    paddingRight: 12,
     color: colors.foreground,
+    fontFamily: fonts.mono,
     fontSize: 22,
     lineHeight: 28,
     fontWeight: '700',
   },
-  difficultyBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  difficultyText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
   metaRow: {
-    marginTop: 12,
+    marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  metaLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    paddingRight: 12,
+    gap: 10,
   },
   metaText: {
-    color: colors.muted,
+    flex: 1,
+    color: colors.comment,
+    fontFamily: fonts.mono,
     fontSize: 12,
-    marginLeft: 8,
-  },
-  reportButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  reportText: {
-    color: colors.muted,
-    fontSize: 11,
-    marginLeft: 6,
   },
   tabs: {
     marginTop: 20,
-    flexDirection: 'row',
+    flexGrow: 0,
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
   },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingTop: 4,
-    paddingBottom: 12,
+  tabsContent: {
+    gap: 2,
   },
-  tabLabelRow: {
+  tabItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderTopLeftRadius: radius.md,
+    borderTopRightRadius: radius.md,
+    borderTopWidth: 2,
+    borderTopColor: 'transparent',
+  },
+  tabItemActive: {
+    backgroundColor: colors.card,
+    borderTopColor: colors.lime,
   },
   tabLabel: {
-    fontSize: 13,
+    fontFamily: fonts.mono,
+    fontSize: 12,
     fontWeight: '600',
-    marginLeft: 6,
-  },
-  tabIndicator: {
-    position: 'absolute',
-    bottom: -1,
-    left: '20%',
-    right: '20%',
-    height: 2,
-    borderRadius: 2,
-    backgroundColor: colors.peach,
   },
   tabBody: {
     marginTop: 20,
@@ -624,10 +518,8 @@ const styles = StyleSheet.create({
   section: {
     marginTop: 20,
   },
-  sectionTitle: {
-    color: colors.foreground,
-    fontSize: 15,
-    fontWeight: '700',
+  sectionLabel: {
+    marginBottom: 8,
   },
   bodyText: {
     color: colors.muted,
@@ -638,32 +530,24 @@ const styles = StyleSheet.create({
     color: colors.foreground,
     fontWeight: '700',
   },
-  codeBlock: {
-    marginTop: 8,
-    borderRadius: 16,
-    paddingHorizontal: 16,
+  exampleBody: {
+    paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
   },
   codeLine: {
     color: colors.foreground,
     fontSize: 13,
     lineHeight: 20,
-    fontFamily: 'Courier',
+    fontFamily: fonts.mono,
   },
-  codeMuted: {
-    color: colors.muted,
+  codeKey: {
+    color: colors.mint,
   },
   explanation: {
-    color: colors.muted,
-    fontSize: 12,
+    marginTop: 10,
     lineHeight: 18,
-    marginTop: 8,
   },
   constraintsList: {
-    marginTop: 8,
     gap: 6,
   },
   constraintRow: {
@@ -671,83 +555,35 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   bullet: {
-    color: colors.muted,
+    color: colors.lime,
+    fontFamily: fonts.mono,
     fontSize: 13,
     lineHeight: 20,
     marginRight: 8,
   },
   constraintText: {
     flex: 1,
-    color: colors.muted,
+    color: colors.foreground,
     fontSize: 13,
     lineHeight: 20,
-    fontFamily: 'Courier',
+    fontFamily: fonts.mono,
   },
-  tagsLabel: {
-    color: colors.muted,
-    fontSize: 12,
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  tagsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  tagChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  tagText: {
-    color: colors.muted,
-    fontSize: 11,
-  },
-  lockedCard: {
-    borderRadius: 24,
-    padding: 32,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  lockedIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.limeSoft,
-  },
-  lockedTitle: {
-    color: colors.foreground,
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: 16,
-  },
-  lockedSubtitle: {
-    color: colors.muted,
-    fontSize: 13,
-    lineHeight: 19,
-    textAlign: 'center',
-    marginTop: 8,
+  hintBox: {
+    borderLeftWidth: 2,
+    borderLeftColor: colors.type,
+    paddingLeft: 12,
   },
   submissionsLoading: {
     paddingVertical: 40,
     alignItems: 'center',
   },
-  submissionsList: {
-    gap: 12,
+  submissionRow: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
-  submissionCard: {
-    borderRadius: 16,
-    padding: 14,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
+  submissionDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cardBorder,
   },
   submissionTop: {
     flexDirection: 'row',
@@ -755,56 +591,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  statusBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-  },
   submissionDate: {
-    color: colors.muted,
-    fontSize: 12,
+    color: colors.mutedDark,
+    fontFamily: fonts.mono,
+    fontSize: 11,
   },
   submissionMeta: {
-    marginTop: 12,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  submissionMetaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  submissionMetaText: {
+    marginTop: 8,
     color: colors.muted,
+    fontFamily: fonts.mono,
     fontSize: 12,
   },
   footer: {
-    marginTop: 24,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-  },
-  submitButton: {
-    height: 54,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.peach,
-  },
-  submitLabel: {
-    color: '#1f1208',
-    fontSize: 16,
-    fontWeight: '700',
-    marginRight: 8,
-  },
-  pressed: {
-    opacity: 0.75,
+    marginTop: 28,
   },
 })

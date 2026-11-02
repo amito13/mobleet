@@ -1,9 +1,10 @@
+import { BlinkingCursor, CodeButton, Comment, Panel } from '@/components/code-ui'
 import { useAuth } from '@/hooks/use-auth'
 import { useScreenInsets } from '@/hooks/use-screen-insets'
 import { fetchProblems, fetchSolvedCount } from '@/lib/problems'
-import { colors } from '@/lib/theme'
+import { colors, fonts, radius } from '@/lib/theme'
 import { getAvatar, getDisplayName, getInitials } from '@/lib/user'
-import { Feather, Ionicons } from '@expo/vector-icons'
+import { Feather } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
@@ -38,9 +39,17 @@ export default function HomeScreen() {
   }
 
   const displayName = getDisplayName(user)
-  const firstName = displayName.split(' ')[0] ?? 'Rider'
+  const firstName = displayName.split(' ')[0] ?? 'dev'
   const initials = getInitials(displayName)
   const avatarUrl = getAvatar(user)
+
+  const openDailyChallenge = () => {
+    if (firstProblemId) {
+      router.push(`/problems/${firstProblemId}` as never)
+    } else {
+      router.push('/problems' as never)
+    }
+  }
 
   return (
     <View style={styles.screen}>
@@ -59,87 +68,88 @@ export default function HomeScreen() {
                   resizeMode="contain"
                 />
               </View>
-              <Text style={styles.brand}>MobLeet</Text>
+              <Text style={styles.brand}>
+                <Text style={styles.brandBracket}>{'<'}</Text>
+                MobLeet
+                <Text style={styles.brandBracket}>{' />'}</Text>
+              </Text>
             </View>
-          </View>
-
-          <View style={styles.welcomeRow}>
-            <View style={styles.avatar}>
+            <Pressable
+              onPress={() => router.push('/profile' as never)}
+              style={({ pressed }) => [styles.avatar, pressed && styles.pressed]}
+            >
               {avatarUrl ? (
                 <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
               ) : (
                 <Text style={styles.avatarInitials}>{initials}</Text>
               )}
-            </View>
-            <View style={styles.welcomeText}>
-              <Text style={styles.welcomeLabel}>Welcome back</Text>
-              <Text style={styles.welcomeName} numberOfLines={1}>
+            </Pressable>
+          </View>
+
+          <View style={styles.greeting}>
+            <Text style={styles.promptLine}>
+              <Text style={styles.prompt}>$ </Text>whoami
+            </Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.name} numberOfLines={1}>
                 {firstName}
               </Text>
+              <BlinkingCursor height={24} />
             </View>
           </View>
 
-          <View style={styles.heroCard}>
-            <View style={styles.heroContent}>
-              <View style={styles.heroTextWrap}>
-                <Text style={styles.heroTitle}>Ready to practice</Text>
-                <Text style={styles.heroSubtitle}>
-                  Your session is live. Jump into a problem and keep the streak
-                  going.
-                </Text>
-              </View>
-              <View style={styles.heroIcon}>
-                <Ionicons
-                  name="shield-checkmark"
-                  size={22}
-                  color={colors.lime}
-                />
-              </View>
+          <Panel title="today.ts" icon="calendar" style={styles.hero}>
+            <View style={styles.heroBody}>
+              <Text style={styles.heroCode}>
+                <Text style={{ color: colors.keyword }}>await </Text>
+                <Text style={{ color: colors.fn }}>practice</Text>
+                <Text style={{ color: colors.muted }}>(</Text>
+                <Text style={{ color: colors.string }}>&apos;daily&apos;</Text>
+                <Text style={{ color: colors.muted }}>)</Text>
+              </Text>
+              <Comment style={styles.heroComment}>
+                one problem a day keeps the streak alive
+              </Comment>
+              <CodeButton
+                label="Run daily challenge"
+                onPress={openDailyChallenge}
+                icon={(color) => <Feather name="play" size={14} color={color} />}
+                style={styles.heroButton}
+              />
             </View>
-          </View>
+          </Panel>
 
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Quick practice</Text>
-            <Text style={styles.sectionHint}>Tap to start</Text>
-          </View>
-
-          <View style={styles.actions}>
-            <ActionCard
-              icon="map"
+          <Comment style={styles.sectionLabel}>quick_actions</Comment>
+          <Panel>
+            <ActionRow
+              icon="folder"
               color={colors.peach}
-              title="Browse problems"
-              subtitle="Pick from the problem set"
+              title="problems/"
+              subtitle="browse the full problem set"
               onPress={() => router.push('/problems' as never)}
             />
-            <ActionCard
-              icon="navigate"
-              color={colors.lime}
-              title="Daily challenge"
-              subtitle="Start with the first challenge"
-              onPress={() => {
-                if (firstProblemId) {
-                  router.push(`/problems/${firstProblemId}` as never)
-                } else {
-                  router.push('/problems' as never)
-                }
-              }}
-            />
-            <ActionCard
-              icon="bookmark"
+            <ActionRow
+              icon="activity"
               color={colors.mint}
-              title="Saved problems"
-              subtitle="Bookmarks are coming soon"
-              onPress={() => router.push('/problems' as never)}
+              title="activity.log"
+              subtitle="streak & submission history"
+              onPress={() => router.push('/profile' as never)}
             />
-          </View>
+            <ActionRow
+              icon="bookmark"
+              color={colors.keyword}
+              title="saved.json"
+              subtitle="bookmarks are coming soon"
+              onPress={() => router.push('/problems' as never)}
+              last
+            />
+          </Panel>
 
-          <View style={styles.weekSection}>
-            <Text style={styles.sectionTitle}>This week</Text>
-            <View style={styles.statsRow}>
-              <StatCard label="Solved" value={String(solvedCount)} tint={colors.lime} />
-              <StatCard label="Streak" value="0" tint={colors.peach} />
-              <StatCard label="Saved" value="0" tint={colors.mint} />
-            </View>
+          <Comment style={styles.sectionLabel}>this_week</Comment>
+          <View style={styles.statsRow}>
+            <StatCard label="solved" value={String(solvedCount)} tint={colors.lime} />
+            <StatCard label="streak" value="0" tint={colors.peach} />
+            <StatCard label="saved" value="0" tint={colors.mint} />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -147,32 +157,36 @@ export default function HomeScreen() {
   )
 }
 
-function ActionCard({
+function ActionRow({
   icon,
   color,
   title,
   subtitle,
   onPress,
+  last,
 }: {
-  icon: keyof typeof Ionicons.glyphMap
+  icon: keyof typeof Feather.glyphMap
   color: string
   title: string
   subtitle: string
   onPress: () => void
+  last?: boolean
 }) {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.actionCard, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.actionRow,
+        !last && styles.actionDivider,
+        pressed && styles.rowPressed,
+      ]}
     >
-      <View style={[styles.actionIcon, { backgroundColor: `${color}26` }]}>
-        <Ionicons name={icon} size={20} color={color} />
-      </View>
+      <Feather name={icon} size={16} color={color} />
       <View style={styles.actionText}>
         <Text style={styles.actionTitle}>{title}</Text>
         <Text style={styles.actionSubtitle}>{subtitle}</Text>
       </View>
-      <Feather name="chevron-right" size={18} color="#a1a1aa" />
+      <Feather name="chevron-right" size={16} color={colors.mutedDark} />
     </Pressable>
   )
 }
@@ -188,8 +202,7 @@ function StatCard({
 }) {
   return (
     <View style={styles.statCard}>
-      <View style={[styles.statDot, { backgroundColor: tint }]} />
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={[styles.statValue, { color: tint }]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   )
@@ -222,9 +235,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -233,30 +246,29 @@ const styles = StyleSheet.create({
     borderColor: colors.limeBorder,
   },
   logoImage: {
-    width: 26,
-    height: 26,
+    width: 22,
+    height: 22,
   },
   brand: {
     color: colors.foreground,
-    fontSize: 18,
+    fontFamily: fonts.mono,
+    fontSize: 16,
     fontWeight: '700',
     marginLeft: 10,
   },
-  welcomeRow: {
-    marginTop: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
+  brandBracket: {
+    color: colors.lime,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: 'rgba(189, 240, 110, 0.18)',
-    borderWidth: 2,
-    borderColor: colors.lime,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
   },
   avatarImage: {
     width: '100%',
@@ -264,97 +276,73 @@ const styles = StyleSheet.create({
   },
   avatarInitials: {
     color: colors.lime,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  welcomeText: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  welcomeLabel: {
-    color: colors.muted,
-    fontSize: 12,
-  },
-  welcomeName: {
-    color: colors.foreground,
-    fontSize: 22,
-    lineHeight: 28,
-    fontWeight: '700',
-  },
-  heroCard: {
-    marginTop: 20,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(189, 240, 110, 0.35)',
-    backgroundColor: 'rgba(189, 240, 110, 0.12)',
-    padding: 18,
-  },
-  heroContent: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-  },
-  heroTextWrap: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  heroTitle: {
-    color: colors.foreground,
-    fontSize: 18,
-    lineHeight: 24,
-    fontWeight: '700',
-  },
-  heroSubtitle: {
-    color: colors.muted,
+    fontFamily: fonts.mono,
     fontSize: 13,
-    lineHeight: 18,
-    marginTop: 4,
-  },
-  heroIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(10, 10, 12, 0.4)',
-  },
-  sectionHeader: {
-    marginTop: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sectionTitle: {
-    color: colors.foreground,
-    fontSize: 16,
     fontWeight: '700',
-  },
-  sectionHint: {
-    color: colors.muted,
-    fontSize: 12,
-  },
-  actions: {
-    marginTop: 12,
-    gap: 10,
-  },
-  actionCard: {
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
   },
   pressed: {
     opacity: 0.7,
   },
-  actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
+  greeting: {
+    marginTop: 28,
+  },
+  promptLine: {
+    color: colors.muted,
+    fontFamily: fonts.mono,
+    fontSize: 13,
+  },
+  prompt: {
+    color: colors.lime,
+    fontWeight: '700',
+  },
+  nameRow: {
+    marginTop: 6,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 6,
+  },
+  name: {
+    flexShrink: 1,
+    color: colors.foreground,
+    fontFamily: fonts.mono,
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '700',
+  },
+  hero: {
+    marginTop: 24,
+  },
+  heroBody: {
+    padding: 16,
+  },
+  heroCode: {
+    fontFamily: fonts.mono,
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  heroComment: {
+    marginTop: 6,
+  },
+  heroButton: {
+    marginTop: 16,
+    height: 44,
+  },
+  sectionLabel: {
+    marginTop: 28,
+    marginBottom: 10,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  actionDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cardBorder,
+  },
+  rowPressed: {
+    backgroundColor: colors.cardHeader,
   },
   actionText: {
     flex: 1,
@@ -362,7 +350,8 @@ const styles = StyleSheet.create({
   },
   actionTitle: {
     color: colors.foreground,
-    fontSize: 15,
+    fontFamily: fonts.mono,
+    fontSize: 14,
     fontWeight: '600',
   },
   actionSubtitle: {
@@ -370,36 +359,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  weekSection: {
-    marginTop: 24,
-  },
   statsRow: {
-    marginTop: 12,
     flexDirection: 'row',
     gap: 10,
   },
   statCard: {
     flex: 1,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: radius.lg,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.cardBorder,
   },
-  statDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginBottom: 8,
-  },
   statValue: {
-    color: colors.foreground,
-    fontSize: 18,
-    lineHeight: 22,
+    fontFamily: fonts.mono,
+    fontSize: 24,
+    lineHeight: 30,
     fontWeight: '700',
   },
   statLabel: {
     color: colors.muted,
+    fontFamily: fonts.mono,
     fontSize: 11,
     marginTop: 2,
   },

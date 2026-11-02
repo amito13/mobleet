@@ -1,5 +1,6 @@
 import type { LanguageId } from '@/lib/problems'
 import { grammarForLanguage } from '@/lib/prism-languages'
+import { colors, fonts } from '@/lib/theme'
 import type { Token, TokenStream } from 'prismjs'
 import Prism from 'prismjs'
 import { useMemo, type ReactNode } from 'react'
@@ -13,7 +14,7 @@ import {
 } from 'react-native'
 
 const COLORS: Record<string, string> = {
-  plain: '#f4f4f5',
+  plain: colors.foreground,
   comment: '#86c47a',
   prolog: '#86c47a',
   doctype: '#86c47a',
@@ -48,7 +49,6 @@ const COLORS: Record<string, string> = {
 
 const H_PAD = 12
 const V_PAD = 12
-const mono = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'Courier' })
 
 function renderItem(item: string | Token, key: string, textStyle: TextStyle): ReactNode {
   if (typeof item === 'string') {
@@ -89,7 +89,7 @@ export function CodeEditor({
 }) {
   const textStyle = useMemo(
     () => ({
-      fontFamily: mono as string,
+      fontFamily: fonts.mono,
       fontSize: 14,
       lineHeight: 22,
       color: COLORS.plain,
@@ -125,9 +125,9 @@ export function CodeEditor({
         spellCheck={false}
         scrollEnabled={false}
         placeholder={placeholder}
-        placeholderTextColor="#71717a"
+        placeholderTextColor={colors.mutedDark}
         underlineColorAndroid="transparent"
-        selectionColor="rgba(189, 240, 110, 0.45)"
+        selectionColor={colors.limeBorder}
         {...(Platform.OS === 'android' ? { cursorColor: '#f4f4f5' as const } : {})}
         style={[
           textStyle,

@@ -1,3 +1,4 @@
+import { colors } from '@/lib/theme'
 import { useNavigation } from '@react-navigation/native'
 import { useLayoutEffect, useMemo } from 'react'
 import type { ViewStyle } from 'react-native'
@@ -13,8 +14,8 @@ export function useTabBarStyle(): ViewStyle {
   const insets = useSafeAreaInsets()
   return useMemo(
     () => ({
-      backgroundColor: '#0f1014',
-      borderTopColor: 'rgba(255,255,255,0.07)',
+      backgroundColor: colors.cardHeader,
+      borderTopColor: colors.cardBorder,
       borderTopWidth: 1,
       height: 56 + insets.bottom,
       paddingTop: 6,

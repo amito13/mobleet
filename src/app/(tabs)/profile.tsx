@@ -1,8 +1,9 @@
 import { ActivityHeatmap } from '@/components/activity-heatmap'
+import { CodeButton, Comment, Panel, PathHeader } from '@/components/code-ui'
 import { useAuth } from '@/hooks/use-auth'
-import { useScreenInsets } from '../../hooks/use-screen-insets'
+import { useScreenInsets } from '@/hooks/use-screen-insets'
 import { fetchSolvedCount, fetchUserSubmissionActivity } from '@/lib/problems'
-import { colors } from '@/lib/theme'
+import { colors, fonts, radius } from '@/lib/theme'
 import { getAvatar, getDisplayName, getInitials } from '@/lib/user'
 import { Feather } from '@expo/vector-icons'
 import { useFocusEffect } from 'expo-router'
@@ -12,7 +13,6 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -63,6 +63,17 @@ export default function ProfileScreen() {
   const displayName = getDisplayName(user)
   const avatarUrl = getAvatar(user)
 
+  const handleSignOut = async () => {
+    setSigningOut(true)
+    try {
+      await signOut()
+    } catch (err) {
+      Alert.alert('Sign out failed', err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setSigningOut(false)
+    }
+  }
+
   return (
     <View style={styles.screen}>
       <SafeAreaView style={styles.safe} edges={['top']}>
@@ -70,64 +81,66 @@ export default function ProfileScreen() {
           contentContainerStyle={[styles.scroll, contentPadding]}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>Profile</Text>
-          <Text style={styles.subtitle}>Manage your MobLeet account.</Text>
+          <PathHeader path="profile" title="Profile" />
 
-          <View style={styles.card}>
-            <View style={styles.avatar}>
-              {avatarUrl ? (
-                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
-              ) : (
-                <Text style={styles.avatarInitials}>{getInitials(displayName)}</Text>
-              )}
+          <Panel title="user.json" icon="user" style={styles.userPanel}>
+            <View style={styles.userBody}>
+              <View style={styles.avatar}>
+                {avatarUrl ? (
+                  <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+                ) : (
+                  <Text style={styles.avatarInitials}>{getInitials(displayName)}</Text>
+                )}
+              </View>
+              <View style={styles.json}>
+                <Text style={styles.jsonLine}>{'{'}</Text>
+                <JsonField name="name" value={displayName} />
+                <JsonField name="email" value={user.email ?? ''} last />
+                <Text style={styles.jsonLine}>{'}'}</Text>
+              </View>
             </View>
-            <Text style={styles.name}>{displayName}</Text>
-            <Text style={styles.email}>{user.email}</Text>
-          </View>
+          </Panel>
 
+          <Comment style={styles.sectionLabel}>stats</Comment>
           <View style={styles.statsRow}>
-            <StatCard label="Solved" value={statsLoading ? '—' : String(solvedCount)} tint={colors.lime} />
-            <StatCard label="Submissions" value={statsLoading ? '—' : String(totalSubmissions)} tint={colors.peach} />
-            <StatCard label="Active days" value={statsLoading ? '—' : String(activity.size)} tint={colors.mint} />
+            <StatCard label="solved" value={statsLoading ? '--' : String(solvedCount)} tint={colors.lime} />
+            <StatCard label="runs" value={statsLoading ? '--' : String(totalSubmissions)} tint={colors.peach} />
+            <StatCard label="active_days" value={statsLoading ? '--' : String(activity.size)} tint={colors.mint} />
           </View>
 
           <ActivityHeatmap activity={activity} loading={statsLoading} />
 
-          <Pressable
-            onPress={async () => {
-              setSigningOut(true)
-              try {
-                await signOut()
-              } catch (err) {
-                Alert.alert('Sign out failed', err instanceof Error ? err.message : 'Unknown error')
-              } finally {
-                setSigningOut(false)
-              }
-            }}
-            disabled={signingOut}
-            style={({ pressed }) => [styles.signOutButton, (pressed || signingOut) && styles.pressed]}
-          >
-            {signingOut ? (
-              <ActivityIndicator color={colors.danger} />
-            ) : (
-              <>
-                <Feather name="log-out" size={16} color={colors.danger} />
-                <Text style={styles.signOutLabel}>Sign out</Text>
-              </>
-            )}
-          </Pressable>
+          <CodeButton
+            label="logout"
+            variant="danger"
+            loading={signingOut}
+            onPress={handleSignOut}
+            icon={(color) => <Feather name="log-out" size={16} color={color} />}
+            style={styles.signOutButton}
+          />
         </ScrollView>
       </SafeAreaView>
     </View>
   )
 }
 
+function JsonField({ name, value, last }: { name: string; value: string; last?: boolean }) {
+  return (
+    <Text style={styles.jsonLine} numberOfLines={1}>
+      {'  '}
+      <Text style={{ color: colors.mint }}>&quot;{name}&quot;</Text>
+      <Text style={{ color: colors.muted }}>: </Text>
+      <Text style={{ color: colors.string }}>&quot;{value}&quot;</Text>
+      {last ? '' : ','}
+    </Text>
+  )
+}
+
 function StatCard({ label, value, tint }: { label: string; value: string; tint: string }) {
   return (
     <View style={styles.statCard}>
-      <View style={[styles.statDot, { backgroundColor: tint }]} />
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, { color: tint }]}>{value}</Text>
+      <Text style={styles.statLabel} numberOfLines={1}>{label}</Text>
     </View>
   )
 }
@@ -142,56 +155,39 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   scroll: { flexGrow: 1 },
-  title: { color: colors.foreground, fontSize: 30, lineHeight: 36, fontWeight: '700' },
-  subtitle: { color: colors.muted, fontSize: 14, marginTop: 8 },
-  card: {
-    marginTop: 24,
-    borderRadius: 24,
-    padding: 20,
+  userPanel: { marginTop: 20 },
+  userBody: {
+    padding: 14,
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
+    gap: 14,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 56,
+    height: 56,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: 'rgba(189, 240, 110, 0.16)',
-    borderWidth: 2,
-    borderColor: colors.lime,
+    backgroundColor: colors.limeSoft,
+    borderWidth: 1,
+    borderColor: colors.limeBorder,
   },
   avatarImage: { width: '100%', height: '100%' },
-  avatarInitials: { color: colors.lime, fontSize: 24, fontWeight: '700' },
-  name: { color: colors.foreground, fontSize: 20, fontWeight: '700', marginTop: 16 },
-  email: { color: colors.muted, fontSize: 13, marginTop: 4 },
-  statsRow: { marginTop: 16, flexDirection: 'row', gap: 10 },
+  avatarInitials: { color: colors.lime, fontFamily: fonts.mono, fontSize: 18, fontWeight: '700' },
+  json: { flex: 1 },
+  jsonLine: { color: colors.muted, fontFamily: fonts.mono, fontSize: 12, lineHeight: 19 },
+  sectionLabel: { marginTop: 24, marginBottom: 10 },
+  statsRow: { flexDirection: 'row', gap: 10 },
   statCard: {
     flex: 1,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     padding: 14,
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.cardBorder,
   },
-  statDot: { width: 6, height: 6, borderRadius: 3, marginBottom: 8 },
-  statValue: { color: colors.foreground, fontSize: 18, fontWeight: '700' },
-  statLabel: { color: colors.muted, fontSize: 11, marginTop: 2 },
-  signOutButton: {
-    marginTop: 24,
-    height: 52,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  signOutLabel: { color: colors.danger, fontSize: 15, fontWeight: '600' },
-  pressed: { opacity: 0.7 },
+  statValue: { fontFamily: fonts.mono, fontSize: 22, lineHeight: 28, fontWeight: '700' },
+  statLabel: { color: colors.muted, fontFamily: fonts.mono, fontSize: 11, marginTop: 2 },
+  signOutButton: { marginTop: 24 },
 })

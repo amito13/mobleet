@@ -1,4 +1,5 @@
 import { CodeEditor } from '@/components/code-editor'
+import { CodeButton, Panel, StatusBlock } from '@/components/code-ui'
 import { useScreenInsets } from '@/hooks/use-screen-insets'
 import {
   submitSolution,
@@ -15,15 +16,14 @@ import {
   type LanguageId,
   type Problem,
 } from '@/lib/problems'
-import { colors } from '@/lib/theme'
-import { Feather, Ionicons } from '@expo/vector-icons'
+import { colors, fonts, radius } from '@/lib/theme'
+import { Feather } from '@expo/vector-icons'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -32,11 +32,11 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-const mono = Platform.select({
-  ios: 'Menlo',
-  android: 'monospace',
-  default: 'Courier',
-})
+const FILE_EXTENSION: Record<LanguageId, string> = {
+  javascript: 'js',
+  python: 'py',
+  java: 'java',
+}
 
 export default function SolveProblemScreen() {
   const { contentPadding } = useScreenInsets({
@@ -120,19 +120,24 @@ export default function SolveProblemScreen() {
   if (!problem) {
     return (
       <SafeAreaView style={styles.centered} edges={['top', 'bottom']}>
-        <Feather name="alert-circle" size={32} color={colors.mutedDark} />
-        <Text style={styles.notFoundTitle}>Problem not found</Text>
-        <Pressable
-          onPress={() => router.replace('/problems' as never)}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.backButtonLabel}>Back to problems</Text>
-        </Pressable>
+        <StatusBlock
+          icon="alert-triangle"
+          title="404: problem not found"
+          action={
+            <CodeButton
+              label="Back to problems"
+              onPress={() => router.replace('/problems' as never)}
+            />
+          }
+        />
       </SafeAreaView>
     )
   }
 
   const currentCase = sampleCases[activeCase]
+  const lineCount = code.split('\n').length
+  const allPassed = summary !== null && summary.passed === summary.total
+  const summaryColor = allPassed ? colors.success : colors.danger
 
   const handleReset = () => {
     Alert.alert(
@@ -189,21 +194,19 @@ export default function SolveProblemScreen() {
           contentInsetAdjustmentBehavior="automatic"
         >
           <View style={styles.navRow}>
-            <View style={styles.navLeft}>
-              <Pressable
-                onPress={() => router.back()}
-                hitSlop={8}
-                style={({ pressed }) => [
-                  styles.iconButton,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Feather name="arrow-left" size={18} color={colors.foreground} />
-              </Pressable>
-              <Text style={styles.navTitle} numberOfLines={1}>
-                {problem.title}
-              </Text>
-            </View>
+            <Pressable
+              onPress={() => router.back()}
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.iconButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Feather name="arrow-left" size={16} color={colors.foreground} />
+            </Pressable>
+            <Text style={styles.navTitle} numberOfLines={1}>
+              {problem.title}
+            </Text>
 
             <Pressable
               onPress={() => setPickerOpen(true)}
@@ -212,16 +215,7 @@ export default function SolveProblemScreen() {
                 pressed && styles.pressed,
               ]}
             >
-              <View
-                style={[
-                  styles.languageBadge,
-                  { backgroundColor: LANGUAGE_TINT[language] },
-                ]}
-              >
-                <Text style={styles.languageBadgeText}>
-                  {LANGUAGE_BADGE[language]}
-                </Text>
-              </View>
+              <LanguageBadge language={language} />
               <Text style={styles.languageLabel}>
                 {LANGUAGE_LABEL[language]}
               </Text>
@@ -229,28 +223,20 @@ export default function SolveProblemScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.editorCard}>
-            <View style={styles.editorToolbar}>
+          <Panel
+            title={`solution.${FILE_EXTENSION[language]}`}
+            icon="code"
+            right={
               <Pressable
-                hitSlop={6}
+                hitSlop={8}
                 onPress={handleReset}
-                style={({ pressed }) => pressed && styles.pressed}
+                style={({ pressed }) => [styles.toolbarButton, pressed && styles.pressed]}
               >
-                <Feather name="rotate-ccw" size={14} color={colors.muted} />
+                <Feather name="rotate-ccw" size={12} color={colors.muted} />
+                <Text style={styles.toolbarLabel}>reset</Text>
               </Pressable>
-              <View style={styles.toolbarDivider} />
-              <Pressable
-                hitSlop={6}
-                onPress={() => {
-                  setCode(getStarterCode(problem, language))
-                  setTouched(false)
-                }}
-                style={({ pressed }) => pressed && styles.pressed}
-              >
-                <Feather name="refresh-cw" size={14} color={colors.muted} />
-              </Pressable>
-            </View>
-
+            }
+          >
             <CodeEditor
               value={code}
               onValueChange={(next) => {
@@ -261,64 +247,81 @@ export default function SolveProblemScreen() {
               minHeight={280}
               placeholder="// Write your solution here"
             />
-          </View>
-
-          <View style={styles.casesHeader}>
-            <View style={styles.casesIcon}>
-              <Ionicons name="flask-outline" size={14} color={colors.peach} />
+            <View style={styles.statusBar}>
+              <Text style={styles.statusText}>
+                <Text style={{ color: touched ? colors.peach : colors.success }}>
+                  {touched ? '● modified' : '✓ saved'}
+                </Text>
+              </Text>
+              <Text style={styles.statusText}>
+                Ln {lineCount} · {LANGUAGE_LABEL[language]}
+              </Text>
             </View>
-            <Text style={styles.casesTitle}>Sample Cases</Text>
-          </View>
+          </Panel>
 
-          {sampleCases.length > 0 ? (
-            <>
-              <View style={styles.caseTabs}>
-                {sampleCases.map((_, index) => {
-                  const active = activeCase === index
-                  return (
-                    <Pressable
-                      key={index}
-                      onPress={() => setActiveCase(index)}
-                      style={({ pressed }) => [
-                        styles.caseTab,
-                        active && styles.caseTabActive,
-                        pressed && styles.pressed,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.caseTabLabel,
-                          { color: active ? colors.peach : colors.muted },
+          <Panel title="testcases" icon="terminal" style={styles.casesPanel}>
+            {sampleCases.length > 0 ? (
+              <>
+                <View style={styles.caseTabs}>
+                  {sampleCases.map((_, index) => {
+                    const active = activeCase === index
+                    const result = results?.[index]
+                    return (
+                      <Pressable
+                        key={index}
+                        onPress={() => setActiveCase(index)}
+                        style={({ pressed }) => [
+                          styles.caseTab,
+                          active && styles.caseTabActive,
+                          pressed && styles.pressed,
                         ]}
                       >
-                        Case {index + 1}
-                      </Text>
-                    </Pressable>
-                  )
-                })}
-              </View>
+                        {result ? (
+                          <View
+                            style={[
+                              styles.caseDot,
+                              {
+                                backgroundColor:
+                                  result.outcome === 'accepted'
+                                    ? colors.success
+                                    : colors.danger,
+                              },
+                            ]}
+                          />
+                        ) : null}
+                        <Text
+                          style={[
+                            styles.caseTabLabel,
+                            { color: active ? colors.foreground : colors.muted },
+                          ]}
+                        >
+                          case_{index + 1}
+                        </Text>
+                      </Pressable>
+                    )
+                  })}
+                </View>
 
-              {currentCase ? (
-                <>
-                  <Text style={styles.fieldLabel}>Input</Text>
-                  <View style={styles.fieldBox}>
-                    <Text style={styles.fieldValue}>{currentCase.input}</Text>
-                  </View>
+                {currentCase ? (
+                  <View style={styles.caseBody}>
+                    <Text style={styles.fieldLabel}>stdin</Text>
+                    <View style={styles.fieldBox}>
+                      <Text style={styles.fieldValue}>{currentCase.input}</Text>
+                    </View>
 
-                  <Text style={styles.fieldLabel}>Expected Output</Text>
-                  <View style={styles.fieldBox}>
-                    <Text style={styles.fieldValue}>{currentCase.output}</Text>
+                    <Text style={styles.fieldLabel}>expected</Text>
+                    <View style={styles.fieldBox}>
+                      <Text style={styles.fieldValue}>{currentCase.output}</Text>
+                    </View>
                   </View>
-                </>
-              ) : null}
-            </>
-          ) : (
-            <View style={styles.emptyCases}>
+                ) : null}
+              </>
+            ) : (
               <Text style={styles.emptyCasesText}>
                 No sample cases available for this problem.
               </Text>
-            </View>
-          )}
+            )}
+          </Panel>
 
           {summary ? (
             <Pressable
@@ -326,67 +329,32 @@ export default function SolveProblemScreen() {
               style={({ pressed }) => [
                 styles.summaryCard,
                 {
-                  backgroundColor:
-                    summary.passed === summary.total
-                      ? 'rgba(134,239,172,0.10)'
-                      : 'rgba(252,165,165,0.10)',
-                  borderColor:
-                    summary.passed === summary.total
-                      ? 'rgba(134,239,172,0.3)'
-                      : 'rgba(252,165,165,0.3)',
+                  backgroundColor: allPassed ? colors.successBg : colors.dangerBg,
+                  borderColor: summaryColor,
                 },
                 pressed && styles.pressed,
               ]}
             >
-              <View style={styles.summaryLeft}>
-                <Feather
-                  name={
-                    summary.passed === summary.total
-                      ? 'check-circle'
-                      : 'x-circle'
-                  }
-                  size={16}
-                  color={
-                    summary.passed === summary.total ? '#86efac' : '#fca5a5'
-                  }
-                />
-                <Text
-                  style={[
-                    styles.summaryText,
-                    {
-                      color:
-                        summary.passed === summary.total
-                          ? '#86efac'
-                          : '#fca5a5',
-                    },
-                  ]}
-                >
-                  {summary.passed}/{summary.total} test cases passed
-                  {solved ? ' · Solved' : ''}
-                </Text>
-              </View>
-              <Text style={styles.summaryHint}>View details</Text>
+              <Feather
+                name={allPassed ? 'check-circle' : 'x-circle'}
+                size={16}
+                color={summaryColor}
+              />
+              <Text style={[styles.summaryText, { color: summaryColor }]}>
+                {summary.passed}/{summary.total} passed
+                {solved ? ' · solved' : ''}
+              </Text>
+              <Text style={styles.summaryHint}>details →</Text>
             </Pressable>
           ) : null}
 
           <View style={styles.footer}>
-            <Pressable
+            <CodeButton
+              label={running ? 'Running...' : 'Submit'}
+              loading={running}
               onPress={handleSubmit}
-              disabled={running}
-              style={({ pressed }) => [
-                styles.submitButton,
-                (running || pressed) && styles.pressed,
-              ]}
-            >
-              {running ? (
-                <ActivityIndicator color="#1f1208" />
-              ) : (
-                <>
-                  <Text style={styles.submitLabel}>Submit Solution</Text>
-                  <Feather name="play" size={16} color="#1f1208" />
-                </>
-              )}
-            </Pressable>
+              icon={(color) => <Feather name="play" size={16} color={color} />}
+            />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -420,6 +388,16 @@ export default function SolveProblemScreen() {
   )
 }
 
+function LanguageBadge({ language }: { language: LanguageId }) {
+  return (
+    <View
+      style={[styles.languageBadge, { backgroundColor: LANGUAGE_TINT[language] }]}
+    >
+      <Text style={styles.languageBadgeText}>{LANGUAGE_BADGE[language]}</Text>
+    </View>
+  )
+}
+
 function ResultsSheet({
   visible,
   onClose,
@@ -445,14 +423,15 @@ function ResultsSheet({
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View
           style={[
-            styles.resultsSheet,
+            styles.sheet,
             { paddingBottom: sheetPaddingBottom, maxHeight: '80%' },
           ]}
         >
           <View style={styles.modalHandle} />
-          <View style={styles.resultsHeader}>
-            <Text style={styles.modalTitle}>
-              Run results{solved ? ' · Solved' : ''}
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>
+              <Text style={{ color: colors.lime }}>$ </Text>
+              run --all{solved ? '  ✓ solved' : ''}
             </Text>
             <Pressable onPress={onClose} hitSlop={8}>
               <Feather name="x" size={18} color={colors.muted} />
@@ -475,60 +454,54 @@ function ResultsSheet({
 function ResultRow({ result }: { result: CaseResult }) {
   const tint =
     result.outcome === 'accepted'
-      ? { fg: '#86efac', bg: 'rgba(134,239,172,0.10)', label: 'Accepted' }
+      ? { fg: colors.success, mark: '✓', label: 'accepted' }
       : result.outcome === 'wrong-answer'
-        ? { fg: '#fca5a5', bg: 'rgba(252,165,165,0.10)', label: 'Wrong Answer' }
-        : { fg: '#fdba74', bg: 'rgba(253,186,116,0.10)', label: 'Error' }
+        ? { fg: colors.danger, mark: '✗', label: 'wrong answer' }
+        : { fg: colors.warning, mark: '!', label: 'error' }
 
   return (
     <View style={styles.resultRow}>
       <View style={styles.resultTop}>
-        <Text style={styles.resultCase}>Case {result.index + 1}</Text>
-        <View style={[styles.resultBadge, { backgroundColor: tint.bg }]}>
-          <Text style={[styles.resultBadgeText, { color: tint.fg }]}>
-            {tint.label.toUpperCase()}
+        <Text style={[styles.resultCase, { color: tint.fg }]}>
+          {tint.mark} case_{result.index + 1}{' '}
+          <Text style={styles.resultOutcome}>{tint.label}</Text>
+        </Text>
+        {result.timeSec != null || result.memoryKb != null ? (
+          <Text style={styles.resultMetaText}>
+            {result.timeSec != null ? `${result.timeSec.toFixed(3)}s` : ''}
+            {result.timeSec != null && result.memoryKb != null ? ' · ' : ''}
+            {result.memoryKb != null ? `${result.memoryKb}KB` : ''}
           </Text>
-        </View>
+        ) : null}
       </View>
 
-      <Text style={styles.resultLabel}>INPUT</Text>
-      <Text style={styles.resultValue}>{result.input}</Text>
-
-      <Text style={styles.resultLabel}>EXPECTED</Text>
-      <Text style={styles.resultValue}>{result.expectedOutput}</Text>
-
-      <Text style={styles.resultLabel}>OUTPUT</Text>
-      <Text style={[styles.resultValue, { color: tint.fg }]}>
-        {result.actualOutput || '(empty)'}
-      </Text>
-
+      <ResultField label="stdin" value={result.input} />
+      <ResultField label="expected" value={result.expectedOutput} />
+      <ResultField
+        label="stdout"
+        value={result.actualOutput || '(empty)'}
+        color={tint.fg}
+      />
       {result.stderr ? (
-        <>
-          <Text style={styles.resultLabel}>STDERR</Text>
-          <Text style={[styles.resultValue, { color: '#fca5a5' }]}>
-            {result.stderr}
-          </Text>
-        </>
+        <ResultField label="stderr" value={result.stderr} color={colors.danger} />
       ) : null}
+    </View>
+  )
+}
 
-      {result.timeSec != null || result.memoryKb != null ? (
-        <View style={styles.resultMeta}>
-          {result.timeSec != null ? (
-            <View style={styles.resultMetaItem}>
-              <Feather name="clock" size={11} color={colors.muted} />
-              <Text style={styles.resultMetaText}>
-                {result.timeSec.toFixed(3)}s
-              </Text>
-            </View>
-          ) : null}
-          {result.memoryKb != null ? (
-            <View style={styles.resultMetaItem}>
-              <Feather name="cpu" size={11} color={colors.muted} />
-              <Text style={styles.resultMetaText}>{result.memoryKb} KB</Text>
-            </View>
-          ) : null}
-        </View>
-      ) : null}
+function ResultField({
+  label,
+  value,
+  color = colors.foreground,
+}: {
+  label: string
+  value: string
+  color?: string
+}) {
+  return (
+    <View style={styles.resultField}>
+      <Text style={styles.resultLabel}>{label}</Text>
+      <Text style={[styles.resultValue, { color }]}>{value}</Text>
     </View>
   )
 }
@@ -558,9 +531,12 @@ function LanguagePicker({
     >
       <View style={styles.modalBackdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={[styles.modalSheet, { paddingBottom: sheetPaddingBottom }]}>
+        <View style={[styles.sheet, { paddingBottom: sheetPaddingBottom }]}>
           <View style={styles.modalHandle} />
-          <Text style={styles.modalTitle}>Pick a language</Text>
+          <Text style={[styles.sheetTitle, { marginBottom: 12 }]}>
+            <Text style={{ color: colors.lime }}>$ </Text>
+            select --language
+          </Text>
           <View style={{ gap: 8 }}>
             {languages.map((lang) => {
               const isActive = active === lang
@@ -571,31 +547,18 @@ function LanguagePicker({
                   style={({ pressed }) => [
                     styles.languageOption,
                     {
-                      backgroundColor: isActive
-                        ? 'rgba(189,240,110,0.10)'
-                        : colors.card,
-                      borderColor: isActive
-                        ? 'rgba(189,240,110,0.35)'
-                        : colors.cardBorder,
+                      backgroundColor: isActive ? colors.limeSoft : colors.card,
+                      borderColor: isActive ? colors.limeBorder : colors.cardBorder,
                     },
                     pressed && styles.pressed,
                   ]}
                 >
-                  <View
-                    style={[
-                      styles.languageBadge,
-                      {
-                        backgroundColor: LANGUAGE_TINT[lang],
-                        marginRight: 10,
-                      },
-                    ]}
-                  >
-                    <Text style={styles.languageBadgeText}>
-                      {LANGUAGE_BADGE[lang]}
-                    </Text>
-                  </View>
+                  <LanguageBadge language={lang} />
                   <Text style={styles.languageOptionLabel}>
                     {LANGUAGE_LABEL[lang]}
+                  </Text>
+                  <Text style={styles.languageOptionExt}>
+                    .{FILE_EXTENSION[lang]}
                   </Text>
                   {isActive ? (
                     <Feather name="check" size={16} color={colors.lime} />
@@ -620,339 +583,275 @@ const styles = StyleSheet.create({
   },
   centered: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    backgroundColor: colors.background,
-  },
-  notFoundTitle: {
-    color: colors.foreground,
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 16,
-  },
-  backButton: {
-    marginTop: 24,
-    borderRadius: 16,
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: colors.lime,
-  },
-  backButtonLabel: {
-    color: colors.background,
-    fontWeight: '700',
+    backgroundColor: colors.background,
   },
   scroll: {
     flexGrow: 1,
   },
   navRow: {
-    height: 56,
-    marginBottom: 4,
+    height: 52,
+    marginBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  navLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingRight: 12,
+    gap: 12,
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.cardBorder,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   navTitle: {
     flex: 1,
     color: colors.foreground,
-    fontSize: 15,
+    fontFamily: fonts.mono,
+    fontSize: 14,
     fontWeight: '700',
-    marginLeft: 12,
   },
   languageChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 8,
-    borderRadius: 12,
+    borderRadius: radius.md,
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.borderStrong,
     gap: 8,
   },
   languageBadge: {
-    width: 16,
-    height: 16,
-    borderRadius: 4,
+    width: 18,
+    height: 18,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   languageBadgeText: {
-    color: colors.background,
-    fontSize: 9,
+    color: colors.onLime,
+    fontFamily: fonts.mono,
+    fontSize: 8,
     fontWeight: '900',
   },
   languageLabel: {
     color: colors.foreground,
+    fontFamily: fonts.mono,
     fontSize: 12,
     fontWeight: '600',
   },
-  editorCard: {
-    borderRadius: 16,
-    backgroundColor: '#0f1014',
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    overflow: 'hidden',
-  },
-  editorToolbar: {
+  toolbarButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-    backgroundColor: 'rgba(255,255,255,0.02)',
+    gap: 4,
   },
-  toolbarDivider: {
-    width: 1,
-    height: 14,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    marginHorizontal: 12,
+  toolbarLabel: {
+    color: colors.muted,
+    fontFamily: fonts.mono,
+    fontSize: 11,
   },
-  casesHeader: {
-    marginTop: 24,
+  statusBar: {
     flexDirection: 'row',
-    alignItems: 'center',
-  },
-  casesIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-    backgroundColor: 'rgba(253,186,116,0.18)',
-  },
-  casesTitle: {
-    color: colors.foreground,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  caseTabs: {
-    marginTop: 12,
-    flexDirection: 'row',
-    gap: 8,
-  },
-  caseTab: {
+    justifyContent: 'space-between',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    backgroundColor: colors.cardHeader,
+    borderTopWidth: 1,
+    borderTopColor: colors.cardBorder,
+  },
+  statusText: {
+    color: colors.mutedDark,
+    fontFamily: fonts.mono,
+    fontSize: 10,
+  },
+  casesPanel: {
+    marginTop: 16,
+  },
+  caseTabs: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+  },
+  caseTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   caseTabActive: {
-    borderBottomColor: colors.peach,
+    backgroundColor: colors.cardHeader,
+    borderColor: colors.borderStrong,
+  },
+  caseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   caseTabLabel: {
-    fontSize: 13,
+    fontFamily: fonts.mono,
+    fontSize: 12,
     fontWeight: '600',
   },
+  caseBody: {
+    paddingHorizontal: 12,
+    paddingBottom: 14,
+  },
   fieldLabel: {
-    marginTop: 16,
-    marginBottom: 8,
-    color: colors.muted,
-    fontSize: 12,
-    letterSpacing: 0.6,
+    marginTop: 12,
+    marginBottom: 6,
+    color: colors.comment,
+    fontFamily: fonts.mono,
+    fontSize: 11,
   },
   fieldBox: {
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderColor: colors.cardBorder,
   },
   fieldValue: {
     color: colors.foreground,
     fontSize: 13,
     lineHeight: 20,
-    fontFamily: mono,
-  },
-  emptyCases: {
-    marginTop: 12,
-    borderRadius: 16,
-    padding: 16,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
+    fontFamily: fonts.mono,
   },
   emptyCasesText: {
     color: colors.muted,
     fontSize: 13,
+    padding: 14,
   },
   summaryCard: {
-    marginTop: 20,
-    borderRadius: 16,
-    paddingHorizontal: 16,
+    marginTop: 16,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 8,
     borderWidth: 1,
   },
-  summaryLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    paddingRight: 12,
-  },
   summaryText: {
+    flex: 1,
+    fontFamily: fonts.mono,
     fontSize: 13,
     fontWeight: '700',
-    marginLeft: 8,
   },
   summaryHint: {
     color: colors.muted,
-    fontSize: 12,
+    fontFamily: fonts.mono,
+    fontSize: 11,
   },
   footer: {
     marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-  },
-  submitButton: {
-    height: 54,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.peach,
-  },
-  submitLabel: {
-    color: '#1f1208',
-    fontSize: 16,
-    fontWeight: '700',
-    marginRight: 8,
-  },
-  pressed: {
-    opacity: 0.75,
-  },
-  resultsSheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    backgroundColor: '#13141a',
-    borderTopWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  resultsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  resultRow: {
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 12,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  resultTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  resultCase: {
-    color: colors.foreground,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  resultBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  resultBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-  },
-  resultLabel: {
-    color: colors.muted,
-    fontSize: 11,
-    letterSpacing: 0.6,
-    marginTop: 8,
-  },
-  resultValue: {
-    color: colors.foreground,
-    fontSize: 12,
-    lineHeight: 18,
-    fontFamily: mono,
-  },
-  resultMeta: {
-    marginTop: 12,
-    flexDirection: 'row',
-    gap: 12,
-  },
-  resultMetaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  resultMetaText: {
-    color: colors.muted,
-    fontSize: 11,
-    marginLeft: 4,
   },
   modalBackdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: colors.backdrop,
   },
-  modalSheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+  sheet: {
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
     paddingHorizontal: 20,
-    paddingTop: 20,
-    backgroundColor: '#13141a',
+    paddingTop: 12,
+    backgroundColor: colors.sheet,
     borderTopWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.borderStrong,
   },
   modalHandle: {
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: colors.borderStrong,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  modalTitle: {
-    color: colors.foreground,
-    fontSize: 18,
-    fontWeight: '700',
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 12,
+  },
+  sheetTitle: {
+    color: colors.foreground,
+    fontFamily: fonts.mono,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  resultRow: {
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.cardBorder,
+  },
+  resultTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  resultCase: {
+    fontFamily: fonts.mono,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  resultOutcome: {
+    fontWeight: '400',
+  },
+  resultMetaText: {
+    color: colors.mutedDark,
+    fontFamily: fonts.mono,
+    fontSize: 11,
+  },
+  resultField: {
+    flexDirection: 'row',
+    marginTop: 6,
+  },
+  resultLabel: {
+    width: 72,
+    color: colors.comment,
+    fontFamily: fonts.mono,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  resultValue: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: fonts.mono,
   },
   languageOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
-    paddingHorizontal: 16,
+    gap: 10,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
     paddingVertical: 12,
     borderWidth: 1,
   },
   languageOptionLabel: {
     flex: 1,
     color: colors.foreground,
+    fontFamily: fonts.mono,
     fontSize: 14,
     fontWeight: '600',
+  },
+  languageOptionExt: {
+    color: colors.mutedDark,
+    fontFamily: fonts.mono,
+    fontSize: 12,
   },
 })

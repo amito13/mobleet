@@ -1,18 +1,17 @@
+import { CodeButton, Panel, PathHeader, StatusBlock } from '@/components/code-ui'
 import { useScreenInsets } from '@/hooks/use-screen-insets'
 import {
-  difficultyLabel,
   difficultyTint,
   fetchProblems,
   type Difficulty,
   type ProblemListItem,
 } from '@/lib/problems'
-import { colors } from '@/lib/theme'
-import { Feather, Ionicons } from '@expo/vector-icons'
+import { colors, fonts, radius } from '@/lib/theme'
+import { Feather } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -26,7 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 const DIFFICULTIES: Difficulty[] = ['EASY', 'MEDIUM', 'HARD']
 
 export default function ProblemsScreen() {
-  const { contentPadding, sheetPaddingBottom } = useScreenInsets({
+  const { contentPadding } = useScreenInsets({
     bottomExtra: 24,
     topExtra: 12,
   })
@@ -35,7 +34,6 @@ export default function ProblemsScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [filtersOpen, setFiltersOpen] = useState(false)
   const [activeDifficulties, setActiveDifficulties] = useState<Set<Difficulty>>(
     new Set()
   )
@@ -92,6 +90,7 @@ export default function ProblemsScreen() {
           contentContainerStyle={[styles.scroll, contentPadding]}
           showsVerticalScrollIndicator={false}
           contentInsetAdjustmentBehavior="automatic"
+          keyboardShouldPersistTaps="handled"
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -100,22 +99,27 @@ export default function ProblemsScreen() {
             />
           }
         >
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>Coding Problems</Text>
-            <View style={styles.countBadge}>
-              <Text style={styles.countText}>{problems.length} total</Text>
-            </View>
-          </View>
+          <PathHeader
+            path="problems"
+            title="Problems"
+            right={
+              <Text style={styles.count}>
+                [<Text style={styles.countValue}>{problems.length}</Text>]
+              </Text>
+            }
+          />
 
           <View style={styles.searchBox}>
-            <Feather name="search" size={16} color={colors.mutedDark} />
+            <Text style={styles.searchPrompt}>{'>'}</Text>
             <TextInput
               value={search}
               onChangeText={setSearch}
-              placeholder="Search problems..."
+              placeholder="grep problems or tags..."
               placeholderTextColor={colors.mutedDark}
               style={styles.searchInput}
               returnKeyType="search"
+              autoCapitalize="none"
+              autoCorrect={false}
             />
             {search.length > 0 ? (
               <Pressable onPress={() => setSearch('')} hitSlop={8}>
@@ -124,157 +128,143 @@ export default function ProblemsScreen() {
             ) : null}
           </View>
 
-          <Pressable
-            onPress={() => setFiltersOpen(true)}
-            style={({ pressed }) => [
-              styles.filterButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Ionicons name="filter-outline" size={16} color={colors.foreground} />
-            <Text style={styles.filterLabel}>Filters</Text>
-            {activeDifficulties.size > 0 ? (
-              <View style={styles.filterCount}>
-                <Text style={styles.filterCountText}>
-                  {activeDifficulties.size}
-                </Text>
-              </View>
-            ) : null}
-          </Pressable>
+          <View style={styles.filters}>
+            <FilterChip
+              label="all"
+              active={activeDifficulties.size === 0}
+              fg={colors.lime}
+              bg={colors.limeSoft}
+              onPress={() => setActiveDifficulties(new Set())}
+            />
+            {DIFFICULTIES.map((difficulty) => {
+              const tint = difficultyTint(difficulty)
+              return (
+                <FilterChip
+                  key={difficulty}
+                  label={difficulty.toLowerCase()}
+                  active={activeDifficulties.has(difficulty)}
+                  fg={tint.fg}
+                  bg={tint.bg}
+                  onPress={() => toggleDifficulty(difficulty)}
+                />
+              )
+            })}
+          </View>
 
           <View style={styles.list}>
             {loading ? (
               <ActivityIndicator color={colors.lime} style={{ marginTop: 40 }} />
             ) : error ? (
-              <View style={styles.empty}>
-                <Feather name="alert-circle" size={28} color={colors.mutedDark} />
-                <Text style={styles.emptyTitle}>Could not load problems</Text>
-                <Text style={styles.emptySubtitle}>{error}</Text>
-                <Pressable
-                  onPress={() => load()}
-                  style={({ pressed }) => [
-                    styles.retryButton,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Text style={styles.retryLabel}>Try again</Text>
-                </Pressable>
-              </View>
+              <StatusBlock
+                icon="alert-triangle"
+                title="error: could not load problems"
+                subtitle={error}
+                action={
+                  <CodeButton
+                    label="Retry"
+                    onPress={() => load()}
+                    icon={(color) => (
+                      <Feather name="rotate-cw" size={14} color={color} />
+                    )}
+                  />
+                }
+              />
             ) : filtered.length === 0 ? (
-              <View style={styles.empty}>
-                <Feather name="inbox" size={28} color={colors.mutedDark} />
-                <Text style={styles.emptyTitle}>No problems match</Text>
-                <Text style={styles.emptySubtitle}>
-                  Try a different keyword or clear the filters.
-                </Text>
-              </View>
+              <StatusBlock
+                icon="search"
+                title="0 results"
+                subtitle="Try a different keyword or clear the filters."
+              />
             ) : (
-              filtered.map((problem) => (
-                <ProblemCard key={problem.id} problem={problem} />
-              ))
+              <Panel
+                title={`${filtered.length} result${filtered.length === 1 ? '' : 's'}`}
+                icon="list"
+              >
+                {filtered.map((problem, index) => (
+                  <ProblemRow
+                    key={problem.id}
+                    problem={problem}
+                    index={problems.indexOf(problem)}
+                    last={index === filtered.length - 1}
+                  />
+                ))}
+              </Panel>
             )}
           </View>
         </ScrollView>
       </SafeAreaView>
-
-      <Modal
-        visible={filtersOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setFiltersOpen(false)}
-        statusBarTranslucent
-      >
-        <View style={styles.modalBackdrop}>
-          <Pressable
-            style={StyleSheet.absoluteFill}
-            onPress={() => setFiltersOpen(false)}
-          />
-          <View
-            style={[styles.modalSheet, { paddingBottom: sheetPaddingBottom }]}
-          >
-            <View style={styles.modalHandle} />
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filters</Text>
-              <Pressable
-                onPress={() => setActiveDifficulties(new Set())}
-                hitSlop={8}
-              >
-                <Text style={styles.clearText}>Clear</Text>
-              </Pressable>
-            </View>
-
-            <Text style={styles.modalSection}>DIFFICULTY</Text>
-            <View style={styles.difficultyRow}>
-              {DIFFICULTIES.map((difficulty) => {
-                const tint = difficultyTint(difficulty)
-                const active = activeDifficulties.has(difficulty)
-                return (
-                  <Pressable
-                    key={difficulty}
-                    onPress={() => toggleDifficulty(difficulty)}
-                    style={({ pressed }) => [
-                      styles.difficultyChip,
-                      {
-                        backgroundColor: active ? tint.bg : colors.card,
-                        borderColor: active ? tint.fg : colors.cardBorder,
-                      },
-                      pressed && styles.pressed,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.difficultyChipText,
-                        { color: active ? tint.fg : colors.foreground },
-                      ]}
-                    >
-                      {difficultyLabel(difficulty)}
-                    </Text>
-                  </Pressable>
-                )
-              })}
-            </View>
-
-            <Pressable
-              onPress={() => setFiltersOpen(false)}
-              style={({ pressed }) => [
-                styles.applyButton,
-                pressed && styles.pressed,
-              ]}
-            >
-              <Text style={styles.applyLabel}>Apply</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
     </View>
   )
 }
 
-function ProblemCard({ problem }: { problem: ProblemListItem }) {
+function FilterChip({
+  label,
+  active,
+  fg,
+  bg,
+  onPress,
+}: {
+  label: string
+  active: boolean
+  fg: string
+  bg: string
+  onPress: () => void
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.chip,
+        active && { backgroundColor: bg, borderColor: fg },
+        pressed && styles.pressed,
+      ]}
+    >
+      <Text style={[styles.chipText, { color: active ? fg : colors.muted }]}>
+        {label}
+      </Text>
+    </Pressable>
+  )
+}
+
+function ProblemRow({
+  problem,
+  index,
+  last,
+}: {
+  problem: ProblemListItem
+  index: number
+  last: boolean
+}) {
   const tint = difficultyTint(problem.difficulty)
 
   return (
     <Pressable
       onPress={() => router.push(`/problems/${problem.id}` as never)}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.row,
+        !last && styles.rowDivider,
+        pressed && styles.rowPressed,
+      ]}
     >
-      <Text style={styles.cardTitle}>{problem.title}</Text>
-      <View style={styles.cardMeta}>
-        <View style={[styles.difficultyBadge, { backgroundColor: tint.bg }]}>
-          <Text style={[styles.difficultyBadgeText, { color: tint.fg }]}>
-            {problem.difficulty}
+      <Text style={styles.rowIndex}>{String(index + 1).padStart(2, '0')}</Text>
+      <View style={styles.rowBody}>
+        <View style={styles.rowTop}>
+          <Text style={styles.rowTitle} numberOfLines={1}>
+            {problem.title}
+          </Text>
+          <Text style={[styles.rowDifficulty, { color: tint.fg }]}>
+            {problem.difficulty.toLowerCase()}
           </Text>
         </View>
+        {problem.tags.length > 0 ? (
+          <Text style={styles.rowTags} numberOfLines={1}>
+            {problem.tags
+              .slice(0, 3)
+              .map((tag) => `#${tag}`)
+              .join('  ')}
+          </Text>
+        ) : null}
       </View>
-      {problem.tags.length > 0 ? (
-        <View style={styles.tagsRow}>
-          {problem.tags.slice(0, 3).map((tag) => (
-            <View key={tag} style={styles.tagChip}>
-              <Text style={styles.tagText}>{tag}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
     </Pressable>
   )
 }
@@ -290,231 +280,106 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  count: {
+    color: colors.mutedDark,
+    fontFamily: fonts.mono,
+    fontSize: 14,
   },
-  title: {
-    color: colors.foreground,
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: '700',
-  },
-  countBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: 'rgba(189, 240, 110, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(189, 240, 110, 0.28)',
-  },
-  countText: {
-    color: colors.lime,
-    fontSize: 11,
-    fontWeight: '600',
+  countValue: {
+    color: colors.number,
   },
   searchBox: {
     marginTop: 20,
-    height: 48,
-    borderRadius: 16,
-    paddingHorizontal: 16,
+    height: 46,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.borderStrong,
+  },
+  searchPrompt: {
+    color: colors.lime,
+    fontFamily: fonts.mono,
+    fontSize: 15,
+    fontWeight: '700',
   },
   searchInput: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 10,
     color: colors.foreground,
+    fontFamily: fonts.mono,
     fontSize: 14,
   },
-  filterButton: {
+  filters: {
     marginTop: 12,
-    height: 44,
-    borderRadius: 16,
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  filterLabel: {
-    color: colors.foreground,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  filterCount: {
-    marginLeft: 8,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    paddingHorizontal: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.lime,
-  },
-  filterCountText: {
-    color: colors.background,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  list: {
-    marginTop: 20,
-    gap: 12,
-  },
-  empty: {
-    borderRadius: 24,
-    padding: 32,
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  emptyTitle: {
-    color: colors.foreground,
-    fontSize: 15,
-    fontWeight: '600',
-    marginTop: 12,
-  },
-  emptySubtitle: {
-    color: colors.muted,
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  retryButton: {
-    marginTop: 16,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: colors.lime,
-  },
-  retryLabel: {
-    color: colors.background,
-    fontWeight: '700',
-  },
-  card: {
-    borderRadius: 24,
-    padding: 16,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  cardTitle: {
-    color: colors.foreground,
-    fontSize: 16,
-    lineHeight: 22,
-    fontWeight: '700',
-  },
-  cardMeta: {
-    marginTop: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
   },
-  difficultyBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  difficultyBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  tagsRow: {
-    marginTop: 12,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  tagChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.cardBorder,
+    backgroundColor: colors.card,
   },
-  tagText: {
-    color: colors.muted,
-    fontSize: 11,
+  chipText: {
+    fontFamily: fonts.mono,
+    fontSize: 12,
+    fontWeight: '600',
   },
   pressed: {
     opacity: 0.7,
   },
-  modalBackdrop: {
+  list: {
+    marginTop: 20,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  rowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cardBorder,
+  },
+  rowPressed: {
+    backgroundColor: colors.cardHeader,
+  },
+  rowIndex: {
+    width: 28,
+    color: colors.mutedDark,
+    fontFamily: fonts.mono,
+    fontSize: 12,
+    lineHeight: 20,
+  },
+  rowBody: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.6)',
   },
-  modalSheet: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    backgroundColor: '#13141a',
-    borderTopWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  modalHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  modalHeader: {
+  rowTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 12,
   },
-  modalTitle: {
+  rowTitle: {
+    flex: 1,
     color: colors.foreground,
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  clearText: {
-    color: colors.lime,
+    fontSize: 15,
+    lineHeight: 20,
     fontWeight: '600',
   },
-  modalSection: {
-    color: colors.muted,
-    fontSize: 12,
-    letterSpacing: 1,
-    marginTop: 16,
-    marginBottom: 12,
-  },
-  difficultyRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  difficultyChip: {
-    flex: 1,
-    borderRadius: 16,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  difficultyChipText: {
-    fontSize: 13,
+  rowDifficulty: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
     fontWeight: '700',
   },
-  applyButton: {
-    marginTop: 24,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    backgroundColor: colors.lime,
-  },
-  applyLabel: {
-    color: colors.background,
-    fontWeight: '700',
+  rowTags: {
+    marginTop: 4,
+    color: colors.comment,
+    fontFamily: fonts.mono,
+    fontSize: 11,
   },
 })

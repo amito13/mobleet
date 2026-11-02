@@ -1,3 +1,4 @@
+import { colors, fonts } from "@/lib/theme";
 import { useAuthStore } from "@/state/auth-store";
 import * as Linking from "expo-linking";
 import { useEffect,useState } from "react";
@@ -33,13 +34,21 @@ export default function AuthCallback() {
         justifyContent: 'center',
         alignItems: 'center',
         gap: 12,
-        backgroundColor: '#0a0a0c',
+        paddingHorizontal: 24,
+        backgroundColor: colors.background,
       }}
     >
       {!error ? (
-        <ActivityIndicator color="#bdf06e" />
+        <>
+          <ActivityIndicator color={colors.lime} />
+          <Text style={{ color: colors.muted, fontFamily: fonts.mono, fontSize: 12 }}>
+            authenticating...
+          </Text>
+        </>
       ) : (
-        <Text style={{ color: '#fafafa' }}>{error}</Text>
+        <Text style={{ color: colors.danger, fontFamily: fonts.mono, fontSize: 13, textAlign: 'center' }}>
+          error: {error}
+        </Text>
       )}
     </View>
     )

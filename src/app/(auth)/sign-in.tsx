@@ -1,12 +1,10 @@
-import { AntDesign, Feather } from '@expo/vector-icons'
+import { AntDesign } from '@expo/vector-icons'
 import * as WebBrowser from 'expo-web-browser'
 import { useEffect, useState } from 'react'
 import {
-  ActivityIndicator,
   Alert,
   Image,
   Linking,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,15 +12,22 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
+import { BlinkingCursor, CodeButton, Comment, Panel } from '@/components/code-ui'
 import { SignInWithOAuth } from '@/lib/auth'
+import { colors, fonts, radius } from '@/lib/theme'
 
 type Provider = 'github' | 'google'
 
-const LIME = '#bdf06e'
-const PEACH = '#fdba74'
-const BACKGROUND = '#0a0a0c'
-const FOREGROUND = '#fafafa'
-const MUTED = '#9e9ea7'
+type Token = [text: string, color: string]
+
+const SNIPPET: Token[][] = [
+  [['const ', colors.keyword], ['you', colors.foreground], [' = {', colors.muted]],
+  [['  practice', colors.mint], [': ', colors.muted], ["'anywhere'", colors.string], [',', colors.muted]],
+  [['  streak', colors.mint], [': ', colors.muted], ['Infinity', colors.number], [',', colors.muted]],
+  [['  progress', colors.mint], [': ', colors.muted], ['track', colors.fn], ['()', colors.muted], [',', colors.muted]],
+  [['  auth', colors.mint], [': ', colors.muted], ["'supabase'", colors.string], [',', colors.muted]],
+  [['}', colors.muted]],
+]
 
 export default function SignInScreen() {
   const [loading, setLoading] = useState<Provider | null>(null)
@@ -65,88 +70,60 @@ export default function SignInScreen() {
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.version}>v1.0</Text>
+            <Text style={styles.version}>v1.0.0</Text>
           </View>
 
           <View style={styles.hero}>
-            <View style={styles.badge}>
-              <View style={styles.badgeDot} />
-              <Text style={styles.badgeText}>Solve smarter</Text>
-            </View>
-
-            <Text style={styles.title}>Welcome to</Text>
-            <Text style={styles.titleAccent}>MobLeet.</Text>
-
+            <Comment>solve smarter</Comment>
+            <Text style={styles.title}>
+              <Text style={styles.titleBracket}>{'<'}</Text>
+              MobLeet
+              <Text style={styles.titleBracket}>{' />'}</Text>
+            </Text>
             <Text style={styles.subtitle}>
-              Practice anywhere - track your{' '}
-              <Text style={styles.subtitleHighlight}>streak</Text>, revisit
-              solutions, and stay consistent.
+              Practice coding problems anywhere, keep your streak alive, and
+              revisit every solution.
             </Text>
           </View>
 
-          <View style={styles.features}>
-            <FeatureRow
-              icon="zap"
-              color={LIME}
-              title="Daily practice"
-              subtitle="Quick problems that fit your day"
-            />
-            <FeatureRow
-              icon="map-pin"
-              color={PEACH}
-              title="Track progress"
-              subtitle="Streaks, topics, and solved history"
-            />
-            <FeatureRow
-              icon="shield"
-              color="#a5f3fc"
-              title="Private & secure"
-              subtitle="Supabase Auth · secure sessions"
-            />
-          </View>
+          <Panel title="welcome.ts" windowControls style={styles.terminal}>
+            <View style={styles.code}>
+              {SNIPPET.map((line, i) => (
+                <View key={i} style={styles.codeLine}>
+                  <Text style={styles.lineNumber}>{i + 1}</Text>
+                  <Text style={styles.codeText}>
+                    {line.map(([text, color], j) => (
+                      <Text key={j} style={{ color }}>
+                        {text}
+                      </Text>
+                    ))}
+                  </Text>
+                </View>
+              ))}
+              <View style={styles.codeLine}>
+                <Text style={styles.lineNumber}>{SNIPPET.length + 1}</Text>
+                <BlinkingCursor height={16} />
+              </View>
+            </View>
+          </Panel>
 
           <View style={styles.actions}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.githubButton,
-                pressed && styles.buttonPressed,
-                loading !== null && styles.buttonDisabled,
-              ]}
+            <Comment>sign in to continue</Comment>
+            <CodeButton
+              label="Continue with GitHub"
+              loading={loading === 'github'}
               disabled={loading !== null}
               onPress={() => handleSignIn('github')}
-            >
-              {loading === 'github' ? (
-                <ActivityIndicator color={BACKGROUND} />
-              ) : (
-                <>
-                  <AntDesign name="github" size={18} color={BACKGROUND} />
-                  <Text style={styles.githubButtonLabel}>
-                    Continue with GitHub
-                  </Text>
-                </>
-              )}
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.googleButton,
-                pressed && styles.buttonPressed,
-                loading !== null && styles.buttonDisabled,
-              ]}
+              icon={(color) => <AntDesign name="github" size={18} color={color} />}
+            />
+            <CodeButton
+              label="Continue with Google"
+              variant="secondary"
+              loading={loading === 'google'}
               disabled={loading !== null}
               onPress={() => handleSignIn('google')}
-            >
-              {loading === 'google' ? (
-                <ActivityIndicator color={FOREGROUND} />
-              ) : (
-                <>
-                  <AntDesign name="google" size={18} color={FOREGROUND} />
-                  <Text style={styles.googleButtonLabel}>
-                    Continue with Google
-                  </Text>
-                </>
-              )}
-            </Pressable>
+              icon={(color) => <AntDesign name="google" size={18} color={color} />}
+            />
           </View>
 
           <Text style={styles.legal}>
@@ -172,43 +149,17 @@ export default function SignInScreen() {
   )
 }
 
-function FeatureRow({
-  icon,
-  color,
-  title,
-  subtitle,
-}: {
-  icon: keyof typeof Feather.glyphMap
-  color: string
-  title: string
-  subtitle: string
-}) {
-  return (
-    <View style={styles.featureRow}>
-      <View
-        style={[styles.featureIconBox, { backgroundColor: `${color}24` }]}
-      >
-        <Feather name={icon} size={18} color={color} />
-      </View>
-      <View style={styles.featureCopy}>
-        <Text style={styles.featureTitle}>{title}</Text>
-        <Text style={styles.featureSubtitle}>{subtitle}</Text>
-      </View>
-    </View>
-  )
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: BACKGROUND,
+    backgroundColor: colors.background,
   },
   safeArea: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 16,
   },
@@ -218,158 +169,83 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   logoBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: 'rgba(189, 240, 110, 0.14)',
+    backgroundColor: colors.limeSoft,
     borderWidth: 1,
-    borderColor: 'rgba(189, 240, 110, 0.32)',
+    borderColor: colors.limeBorder,
   },
   logoImage: {
-    width: 28,
-    height: 28,
+    width: 26,
+    height: 26,
   },
   version: {
-    color: MUTED,
+    color: colors.mutedDark,
+    fontFamily: fonts.mono,
     fontSize: 12,
-    letterSpacing: 1.4,
   },
   hero: {
-    marginTop: 40,
-  },
-  badge: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999,
-    marginBottom: 16,
-    backgroundColor: 'rgba(189, 240, 110, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(189, 240, 110, 0.28)',
-  },
-  badgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: LIME,
-    marginRight: 8,
-  },
-  badgeText: {
-    color: LIME,
-    fontSize: 12,
-    fontWeight: '600',
+    marginTop: 36,
   },
   title: {
-    color: FOREGROUND,
+    marginTop: 8,
+    color: colors.foreground,
+    fontFamily: fonts.mono,
     fontSize: 36,
-    lineHeight: 42,
+    lineHeight: 44,
     fontWeight: '700',
   },
-  titleAccent: {
-    color: LIME,
-    fontSize: 36,
-    lineHeight: 42,
-    fontWeight: '700',
+  titleBracket: {
+    color: colors.lime,
   },
   subtitle: {
-    color: MUTED,
+    color: colors.muted,
     fontSize: 15,
     lineHeight: 22,
-    marginTop: 12,
+    marginTop: 10,
   },
-  subtitleHighlight: {
-    color: PEACH,
+  terminal: {
+    marginTop: 28,
   },
-  features: {
-    marginTop: 32,
-    gap: 10,
+  code: {
+    paddingVertical: 12,
   },
-  featureRow: {
+  codeLine: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
-    padding: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)',
+    minHeight: 22,
   },
-  featureIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  featureCopy: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  featureTitle: {
-    color: FOREGROUND,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  featureSubtitle: {
-    color: MUTED,
+  lineNumber: {
+    width: 36,
+    paddingRight: 12,
+    textAlign: 'right',
+    color: colors.mutedDark,
+    fontFamily: fonts.mono,
     fontSize: 12,
   },
+  codeText: {
+    flex: 1,
+    fontFamily: fonts.mono,
+    fontSize: 13,
+    lineHeight: 22,
+  },
   actions: {
-    marginTop: 32,
+    marginTop: 28,
     gap: 12,
   },
-  githubButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    minHeight: 52,
-    borderRadius: 16,
-    backgroundColor: LIME,
-    paddingHorizontal: 20,
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    minHeight: 52,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    paddingHorizontal: 20,
-  },
-  buttonPressed: {
-    opacity: 0.88,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  githubButtonLabel: {
-    color: BACKGROUND,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  googleButtonLabel: {
-    color: FOREGROUND,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-
   legal: {
-    color: MUTED,
+    color: colors.mutedDark,
     fontSize: 12,
     lineHeight: 18,
     textAlign: 'center',
     marginTop: 24,
   },
   legalLink: {
-    color: PEACH,
+    color: colors.muted,
     textDecorationLine: 'underline',
   },
 })

@@ -1,5 +1,5 @@
 import { useTabBarStyle } from '@/hooks/use-tab-bar-styles'
-import { colors } from '@/lib/theme'
+import { colors, fonts } from '@/lib/theme'
 import { Ionicons } from '@expo/vector-icons'
 import { Tabs } from 'expo-router'
 
@@ -12,9 +12,10 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarStyle,
         tabBarActiveTintColor: colors.lime,
-        tabBarInactiveTintColor: '#a1a1aa',
+        tabBarInactiveTintColor: colors.mutedDark,
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontFamily: fonts.mono,
+          fontSize: 10,
           fontWeight: '600',
         },
         sceneStyle: { backgroundColor: colors.background },
@@ -23,27 +24,27 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: 'home',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+            <Ionicons name="terminal-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="problems"
         options={{
-          title: 'Problems',
+          title: 'problems',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list" size={size} color={color} />
+            <Ionicons name="code-slash-outline" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'profile',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
+            <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
       />

@@ -1,5 +1,6 @@
+import { Panel } from '@/components/code-ui'
 import { toDateKey } from '@/lib/problems'
-import { colors } from '@/lib/theme'
+import { colors, fonts } from '@/lib/theme'
 import { useMemo, useState } from 'react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 
@@ -8,7 +9,7 @@ const GAP = 3
 const WEEKS = 53
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const LEVELS = [
-  'rgba(255,255,255,0.06)',
+  colors.cardHeader,
   'rgba(189, 240, 110, 0.22)',
   'rgba(189, 240, 110, 0.45)',
   'rgba(189, 240, 110, 0.7)',
@@ -86,14 +87,21 @@ export function ActivityHeatmap({
     : `${total} submissions in the last year`
 
   return (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Activity</Text>
+    <Panel
+      title="activity.log"
+      icon="activity"
+      style={styles.card}
+      bodyStyle={styles.body}
+      right={
         <Text style={styles.subtitle}>
-          {loading ? 'Loading…' : `${activity.size} active days`}
+          {loading ? 'loading...' : `${activity.size} active days`}
         </Text>
-      </View>
-      <Text style={styles.summary}>{summary}</Text>
+      }
+    >
+      <Text style={styles.summary}>
+        <Text style={styles.summaryPrompt}>{'> '}</Text>
+        {summary}
+      </Text>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View>
@@ -146,36 +154,24 @@ export function ActivityHeatmap({
         ))}
         <Text style={styles.legendText}>More</Text>
       </View>
-    </View>
+    </Panel>
   )
 }
 
 const styles = StyleSheet.create({
-  card: {
-    marginTop: 20,
-    borderRadius: 24,
-    padding: 16,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  title: { color: colors.foreground, fontSize: 16, fontWeight: '700' },
-  subtitle: { color: colors.muted, fontSize: 12 },
-  summary: { color: colors.muted, fontSize: 13, marginBottom: 14 },
+  card: { marginTop: 16 },
+  body: { padding: 14 },
+  subtitle: { color: colors.mutedDark, fontFamily: fonts.mono, fontSize: 11 },
+  summary: { color: colors.muted, fontFamily: fonts.mono, fontSize: 12, marginBottom: 14 },
+  summaryPrompt: { color: colors.lime },
   monthRow: { height: 16, marginLeft: 28, marginBottom: 6, position: 'relative' },
-  monthLabel: { position: 'absolute', color: colors.mutedDark, fontSize: 10, fontWeight: '600' },
+  monthLabel: { position: 'absolute', color: colors.mutedDark, fontFamily: fonts.mono, fontSize: 10, fontWeight: '600' },
   gridRow: { flexDirection: 'row' },
   dayLabels: { width: 28, gap: GAP },
-  dayLabel: { height: CELL, color: colors.mutedDark, fontSize: 9, fontWeight: '600', lineHeight: CELL },
+  dayLabel: { height: CELL, color: colors.mutedDark, fontFamily: fonts.mono, fontSize: 9, fontWeight: '600', lineHeight: CELL },
   weeks: { flexDirection: 'row', gap: GAP },
   week: { gap: GAP },
-  cell: { width: CELL, height: CELL, borderRadius: 3 },
+  cell: { width: CELL, height: CELL, borderRadius: 2 },
   cellSelected: { borderWidth: 1, borderColor: colors.foreground },
   legend: {
     marginTop: 14,
@@ -184,6 +180,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     gap: 4,
   },
-  legendText: { color: colors.mutedDark, fontSize: 10, marginHorizontal: 2 },
+  legendText: { color: colors.mutedDark, fontFamily: fonts.mono, fontSize: 10, marginHorizontal: 2 },
   legendCell: { width: 10, height: 10, borderRadius: 2 },
 })
