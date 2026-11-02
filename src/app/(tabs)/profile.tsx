@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     borderColor: colors.limeBorder,
   },
   avatarImage: { width: '100%', height: '100%' },
-  avatarInitials: { color: colors.lime, fontFamily: fonts.mono, fontSize: 18, fontWeight: '700' },
+  avatarInitials: { color: colors.lime, fontFamily: fonts.monoBold, fontSize: 18, },
   json: { flex: 1 },
   jsonLine: { color: colors.muted, fontFamily: fonts.mono, fontSize: 12, lineHeight: 19 },
   sectionLabel: { marginTop: 24, marginBottom: 10 },
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.cardBorder,
   },
-  statValue: { fontFamily: fonts.mono, fontSize: 22, lineHeight: 28, fontWeight: '700' },
+  statValue: { fontFamily: fonts.monoBold, fontSize: 22, lineHeight: 28, },
   statLabel: { color: colors.muted, fontFamily: fonts.mono, fontSize: 11, marginTop: 2 },
   signOutButton: { marginTop: 24 },
 })

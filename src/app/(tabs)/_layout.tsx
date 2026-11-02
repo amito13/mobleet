@@ -14,9 +14,8 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.lime,
         tabBarInactiveTintColor: colors.mutedDark,
         tabBarLabelStyle: {
-          fontFamily: fonts.mono,
+          fontFamily: fonts.monoSemiBold,
           fontSize: 10,
-          fontWeight: '600',
         },
         sceneStyle: { backgroundColor: colors.background },
       }}

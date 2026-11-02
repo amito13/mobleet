@@ -301,9 +301,8 @@ const styles = StyleSheet.create({
   },
   searchPrompt: {
     color: colors.lime,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 15,
-    fontWeight: '700',
   },
   searchInput: {
     flex: 1,
@@ -326,9 +325,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
   },
   chipText: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoSemiBold,
     fontSize: 12,
-    fontWeight: '600',
   },
   pressed: {
     opacity: 0.7,
@@ -372,9 +370,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   rowDifficulty: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 11,
-    fontWeight: '700',
   },
   rowTags: {
     marginTop: 4,

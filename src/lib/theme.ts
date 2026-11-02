@@ -1,5 +1,3 @@
-import { Platform } from 'react-native'
-
 export const colors = {
   background: '#0b0e14',
   foreground: '#e6edf3',
@@ -37,8 +35,13 @@ export const colors = {
   dangerBg: 'rgba(252, 165, 165, 0.12)',
 } as const
 
+// Bundled JetBrains Mono (loaded in src/app/_layout.tsx). Use the weight-specific
+// family instead of fontWeight/fontStyle — custom fonts don't synthesize them reliably.
 export const fonts = {
-  mono: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'Courier' }) as string,
+  mono: 'JetBrainsMono_400Regular',
+  monoItalic: 'JetBrainsMono_400Regular_Italic',
+  monoSemiBold: 'JetBrainsMono_600SemiBold',
+  monoBold: 'JetBrainsMono_700Bold',
 } as const
 
 export const radius = {

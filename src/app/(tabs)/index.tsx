@@ -251,9 +251,8 @@ const styles = StyleSheet.create({
   },
   brand: {
     color: colors.foreground,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 16,
-    fontWeight: '700',
     marginLeft: 10,
   },
   brandBracket: {
@@ -276,9 +275,8 @@ const styles = StyleSheet.create({
   },
   avatarInitials: {
     color: colors.lime,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 13,
-    fontWeight: '700',
   },
   pressed: {
     opacity: 0.7,
@@ -293,7 +291,7 @@ const styles = StyleSheet.create({
   },
   prompt: {
     color: colors.lime,
-    fontWeight: '700',
+    fontFamily: fonts.monoBold,
   },
   nameRow: {
     marginTop: 6,
@@ -304,10 +302,9 @@ const styles = StyleSheet.create({
   name: {
     flexShrink: 1,
     color: colors.foreground,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 28,
     lineHeight: 34,
-    fontWeight: '700',
   },
   hero: {
     marginTop: 24,
@@ -350,9 +347,8 @@ const styles = StyleSheet.create({
   },
   actionTitle: {
     color: colors.foreground,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoSemiBold,
     fontSize: 14,
-    fontWeight: '600',
   },
   actionSubtitle: {
     color: colors.muted,
@@ -373,10 +369,9 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorder,
   },
   statValue: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 24,
     lineHeight: 30,
-    fontWeight: '700',
   },
   statLabel: {
     color: colors.muted,

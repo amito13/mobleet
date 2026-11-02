@@ -44,7 +44,7 @@ src/state/            Zustand stores (*-store.ts)
   - Brand: `lime` (primary / prompts / active state), text on lime is `onLime`; `limeSoft`/`limeBorder` for highlights
   - Syntax accents for decorative code: `keyword`, `fn`, `string`, `number`, `type`, `mint`, `peach`
   - Status pairs: `success`/`successBg`, `warning`/`warningBg`, `danger`/`dangerBg`
-- `fonts.mono` for titles, labels, metadata, badges, buttons, numbers and anything code-like. Body/description prose stays in the system sans font for readability.
+- Monospace is bundled **JetBrains Mono** (loaded in `src/app/_layout.tsx`). Never use the system `'monospace'`/`'Menlo'` names — some Android OEM fonts remap them. Pick the weight by family, **not** `fontWeight`/`fontStyle`: `fonts.mono` (400), `fonts.monoSemiBold` (600), `fonts.monoBold` (700), `fonts.monoItalic`. Use mono for titles, labels, metadata, badges, buttons, numbers and anything code-like. Body/description prose stays in the system sans font for readability.
 - `radius.sm` (4) badges/chips, `radius.md` (8) inputs/buttons/icon buttons, `radius.lg` (12) panels/sheets. No pill (999) shapes.
 - Horizontal screen padding 20; buttons 50 high (44 compact); icon buttons 36×36.
 - Pressed states: `pressed && styles.pressed` (opacity 0.7), or `backgroundColor: colors.cardHeader` for list rows. `hitSlop` on small icon buttons.

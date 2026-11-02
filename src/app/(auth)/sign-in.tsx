@@ -194,10 +194,9 @@ const styles = StyleSheet.create({
   title: {
     marginTop: 8,
     color: colors.foreground,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 36,
     lineHeight: 44,
-    fontWeight: '700',
   },
   titleBracket: {
     color: colors.lime,

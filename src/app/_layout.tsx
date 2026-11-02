@@ -1,4 +1,11 @@
 import { colors } from '@/lib/theme'
+import {
+  JetBrainsMono_400Regular,
+  JetBrainsMono_400Regular_Italic,
+  JetBrainsMono_600SemiBold,
+  JetBrainsMono_700Bold,
+  useFonts,
+} from '@expo-google-fonts/jetbrains-mono'
 import { useAuthStore } from '@/state/auth-store'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
@@ -68,6 +75,16 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    JetBrainsMono_400Regular,
+    JetBrainsMono_400Regular_Italic,
+    JetBrainsMono_600SemiBold,
+    JetBrainsMono_700Bold,
+  })
+
+  // Splash stays up (preventAutoHideAsync) until fonts are ready.
+  if (!fontsLoaded && !fontError) return null
+
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />

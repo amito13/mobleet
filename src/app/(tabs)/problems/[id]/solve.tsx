@@ -613,9 +613,8 @@ const styles = StyleSheet.create({
   navTitle: {
     flex: 1,
     color: colors.foreground,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 14,
-    fontWeight: '700',
   },
   languageChip: {
     flexDirection: 'row',
@@ -637,15 +636,13 @@ const styles = StyleSheet.create({
   },
   languageBadgeText: {
     color: colors.onLime,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 8,
-    fontWeight: '900',
   },
   languageLabel: {
     color: colors.foreground,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoSemiBold,
     fontSize: 12,
-    fontWeight: '600',
   },
   toolbarButton: {
     flexDirection: 'row',
@@ -700,9 +697,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   caseTabLabel: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoSemiBold,
     fontSize: 12,
-    fontWeight: '600',
   },
   caseBody: {
     paddingHorizontal: 12,
@@ -746,9 +742,8 @@ const styles = StyleSheet.create({
   },
   summaryText: {
     flex: 1,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 13,
-    fontWeight: '700',
   },
   summaryHint: {
     color: colors.muted,
@@ -788,9 +783,8 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     color: colors.foreground,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 15,
-    fontWeight: '700',
   },
   resultRow: {
     paddingVertical: 12,
@@ -804,12 +798,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   resultCase: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 13,
-    fontWeight: '700',
   },
   resultOutcome: {
-    fontWeight: '400',
+    fontFamily: fonts.mono,
   },
   resultMetaText: {
     color: colors.mutedDark,
@@ -845,9 +838,8 @@ const styles = StyleSheet.create({
   languageOptionLabel: {
     flex: 1,
     color: colors.foreground,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoSemiBold,
     fontSize: 14,
-    fontWeight: '600',
   },
   languageOptionExt: {
     color: colors.mutedDark,

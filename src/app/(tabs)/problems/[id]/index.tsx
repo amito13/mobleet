@@ -466,10 +466,9 @@ const styles = StyleSheet.create({
   },
   problemTitle: {
     color: colors.foreground,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 22,
     lineHeight: 28,
-    fontWeight: '700',
   },
   metaRow: {
     marginTop: 10,
@@ -508,9 +507,8 @@ const styles = StyleSheet.create({
     borderTopColor: colors.lime,
   },
   tabLabel: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoSemiBold,
     fontSize: 12,
-    fontWeight: '600',
   },
   tabBody: {
     marginTop: 20,

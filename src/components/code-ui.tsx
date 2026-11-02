@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   },
   prompt: {
     color: colors.lime,
-    fontWeight: '700',
+    fontFamily: fonts.monoBold,
   },
   titleRow: {
     marginTop: 6,
@@ -238,10 +238,9 @@ const styles = StyleSheet.create({
   title: {
     flexShrink: 1,
     color: colors.foreground,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 24,
     lineHeight: 30,
-    fontWeight: '700',
   },
   panel: {
     borderRadius: radius.lg,
@@ -278,9 +277,8 @@ const styles = StyleSheet.create({
   },
   comment: {
     color: colors.comment,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoItalic,
     fontSize: 12,
-    fontStyle: 'italic',
   },
   badge: {
     paddingHorizontal: 6,
@@ -289,9 +287,8 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   badgeText: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 10,
-    fontWeight: '700',
     letterSpacing: 0.5,
   },
   button: {
@@ -317,9 +314,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(252, 165, 165, 0.3)',
   },
   buttonLabel: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 15,
-    fontWeight: '700',
   },
   pressed: {
     opacity: 0.7,
@@ -339,9 +335,8 @@ const styles = StyleSheet.create({
   },
   statusTitle: {
     color: colors.foreground,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.monoBold,
     fontSize: 14,
-    fontWeight: '700',
     marginTop: 12,
     textAlign: 'center',
   },
