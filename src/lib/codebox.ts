@@ -65,9 +65,6 @@ export async function submitSolution(params: {
   try {
     payload = JSON.parse(text)
   } catch {
-    if (response.status === 401) {
-      throw new Error('Your session was rejected. Sign out and sign in again, then retry.')
-    }
     throw new Error(
       `Submit failed (${response.status}): ${text.trim().slice(0, 200) || 'Empty server response'}`,
     )

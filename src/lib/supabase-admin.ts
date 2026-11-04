@@ -39,7 +39,9 @@ const clientOpts = {
 
     if(!token) return null;
 
-    const {data}  = await getAuthClient().auth.getUser(token);
+    const {data, error}  = await getAuthClient().auth.getUser(token);
+
+    if (error) console.error('getUser failed:', error.status, error.code, error.message);
 
     return data.user ?? null
   }
